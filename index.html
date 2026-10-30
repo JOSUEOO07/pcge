@@ -160,6 +160,7 @@ details[open]>summary::after{transform:rotate(180deg)}
 @keyframes pulso{0%{box-shadow:0 0 0 0 rgba(162,69,47,.5)}100%{box-shadow:0 0 0 14px rgba(162,69,47,0)}}
 .micst{margin:6px 0 0;font-size:.85rem;background:var(--soft);border-radius:10px;padding:8px 10px}
 .micst.err{color:var(--bad)}
+.vacio{display:grid;gap:4px;background:var(--paper);border:1px dashed var(--line);border-radius:14px;padding:14px;color:var(--muted);font-size:.88rem}.vacio b{color:var(--ink);font-size:.95rem}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:12px;font-size:.88rem;z-index:50;max-width:90vw}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -2349,7 +2350,7 @@ const PCGE = PCGE_FULL.split('\n').map(l => { const i = l.indexOf('|'); return {
 const PM = Object.fromEntries(PCGE.map(a => [a.c, a.n]));
 const NIV = ['', 'Elemento', 'Cuenta', 'Subcuenta', 'Divisionaria', 'Subdivisionaria'];
 const nombre = c => PM[c] || '';
-function nombreClaro(c) { const n = nombre(c); if (c.length >= 4 && n.length <= 14) { const p = nombre(c.slice(0, c.length - 1)) || nombre(c.slice(0, 3)); if (p && p !== n) return p + ': ' + n; } return n; }
+function nombreClaro(c) { const n = nombre(c); if (c.length >= 4 && (n.length <= 14 || /^(465|395|3952)/.test(c))) { const p = /^(465|395)/.test(c) ? nombre(c.slice(0, 3)) : (nombre(c.slice(0, c.length - 1)) || nombre(c.slice(0, 3))); if (p && p !== n) return p + ': ' + n; } return n; }
 function cuentaVista(c) { if (ajustes.nivel === 'cta' && c.length > 2) { const k = c.slice(0, 2); return [k, nombre(k)]; } return [c, nombreClaro(c)]; }
 
 /* ===== Navegación ===== */
@@ -2407,19 +2408,26 @@ function opDeFamilia(f, qn) {
 }
 function buscar() {
   const qn = norm($('q').value), toks = qn.split(' ').filter(t => t.length > 2 && !STOP.has(t));
+  if (!toks.length && !filtroCat) {   // sin búsqueda: pantalla limpia
+    sel = null; ultQ = null; window._L = [];
+    $('res').innerHTML = `<div class="vacio"><b>Escribe la operación que quieres registrar</b><span>Por ejemplo: «pago de la camioneta», «recibo por honorarios», «venta de servicio con detracción». También puedes dictarla con el micrófono o elegir un tipo de operación.</span></div>`;
+    $('det').innerHTML = ''; $('m2w').hidden = true; return;
+  }
   let L = OPS.filter(o => !filtroCat || o.cat === filtroCat).map(o => {
     if (!toks.length) return {o, s: 1};
     const tt = norm(o.t), kk = norm(o.k); let s = 0;
     toks.forEach(t => { if (tt.includes(t)) s += 3; else if (kk.includes(t)) s += 2; else if (t.length > 4 && (tt + ' ' + kk).includes(t.slice(0, -1))) s += 1; });
     return {o, s};
   }).filter(x => x.s > 0).sort((a, b) => b.s - a.s);
-  const top = L.length ? L[0].s : 0; L = L.filter(x => !toks.length || x.s >= Math.max(2, top * 0.5)).map(x => x.o);
-  if (qn && toks.length) { const f = famDe(qn); if (f && (PALABRAS_COMPRA.test(qn) || toks.length <= 3)) { const op = opDeFamilia(f, qn); if (!filtroCat || op.cat === filtroCat) L.unshift(op); } }
-  if (!qn && !filtroCat) { const fav = LS.get('fav', []); L.sort((a, b) => fav.includes(b.id) - fav.includes(a.id)); }
-  pintarLista(L.slice(0, 40), qn);
+  const top = L.length ? L[0].s : 0;
+  const f = toks.length ? famDe(qn) : null, famOp = f && (PALABRAS_COMPRA.test(qn) || toks.length <= 3) ? opDeFamilia(f, qn) : null;
+  // solo lo que de verdad coincide: si se reconoció la palabra, apenas las operaciones muy parecidas
+  L = L.filter(x => !toks.length || x.s >= (famOp ? Math.max(6, top) : Math.max(3, top * 0.7))).map(x => x.o).slice(0, famOp ? 2 : 8);
+  if (famOp && (!filtroCat || famOp.cat === filtroCat)) L.unshift(famOp);
+  pintarLista(L, qn);
   verTodos = false;
   const qCambio = ultQ !== qn + '|' + filtroCat; ultQ = qn + '|' + filtroCat;
-  if (L.length) elegir((!qCambio && sel && L.find(x => x.id === sel.id)) || L[0]);
+  if (L.length) { const k = !qCambio && sel && L.find(x => x.id === sel.id); elegir(k || L[0], !k); }
   if (!L.length) { sel = null; $('det').innerHTML = ''; }
 }
 function cuentasResumen(o) { return o.a.filter(a => !a.d).map(a => a.l.map(x => cuentaVista(x[0])[0]).filter((c, i, z) => z.indexOf(c) === i).join(' · ')).join('  →  '); }
@@ -2431,7 +2439,7 @@ function pintarLista(L, qn) {
   window._L = L;
 }
 $('res').addEventListener('click', e => { const b = e.target.closest('[data-op]'); if (b) { elegir(window._L.find(o => o.id === b.dataset.op)); if (matchMedia('(max-width:1100px)').matches) $('det').scrollIntoView({behavior: 'smooth', block: 'start'}); return; } if (e.target.closest('[data-act=armar]')) armarConClaude(); if (e.target.closest('[data-act=mas]')) { verTodos = true; pintarLista(window._L, norm($('q').value)); } });
-function elegir(o) { if (!sel || sel.id !== o.id) variInicial(o); sel = o; document.querySelectorAll('#res .it').forEach(b => b.setAttribute('aria-current', b.dataset.op === o.id)); pintarDet(); }
+function elegir(o, nuevo) { if (nuevo || !sel || sel.id !== o.id) variInicial(o); sel = o; document.querySelectorAll('#res .it').forEach(b => b.setAttribute('aria-current', b.dataset.op === o.id)); pintarDet(); }
 matchMedia('(max-width:1100px)').addEventListener('change', () => window._L && pintarLista(window._L, norm($('q').value)));
 function m2Label(o) { return o && o.calc === 'vc' ? 'Costo de la mercadería' : o && o.calc === 'cuo' ? 'Interés de la cuota' : ''; }
 /* ===== Variantes: cada operación con todas sus posibilidades ===== */
@@ -2455,9 +2463,10 @@ function varsDe(o) {
 }
 function variInicial(o) {
   const qn = norm($('q').value); vari = {};
-  vari.pago = /\b(efectivo|caja)\b/.test(qn) ? 'caja' : /\b(contado|transferencia|yape|plin|banco)\b/.test(qn) || o.a.some(a => a.t === 'Pago') ? 'banco' : 'credito';
+  const dijoCredito = /\b(credito|a plazos|por pagar|pendiente)\b/.test(qn), dijoPago = /\b(pago|pague|pagamos|pagar|contado|transferencia|yape|plin|banco|cancelo|cancele)\b/.test(qn);
+  vari.pago = dijoCredito && !/\b(pago|pague|cancele)\b/.test(qn) ? 'credito' : /\b(efectivo|caja)\b/.test(qn) ? 'caja' : 'banco';
   vari.comp = /\bboleta\b/.test(qn) || o.id === 'cm-bol' ? 'boleta' : 'factura';
-  vari.cobro = /\b(efectivo|caja)\b/.test(qn) ? 'caja' : /\b(contado|transferencia|banco)\b/.test(qn) ? 'banco' : 'credito';
+  vari.cobro = /\b(credito|por cobrar|pendiente)\b/.test(qn) ? 'credito' : /\b(efectivo|caja)\b/.test(qn) ? 'caja' : 'banco';
   vari.rh = 'auto'; vari.agret = 'no'; vari.detc = /\bdetraccion\b/.test(qn) ? 'si' : 'no'; vari.cret = /\bretencion\b/.test(qn) ? 'si' : 'no'; vari.cdet = /\bdetraccion\b/.test(qn) ? 'si' : 'no';
 }
 // devuelve el asiento ya ajustado a las variantes y los montos extra
@@ -2512,6 +2521,13 @@ function aplicarVari(o, M, m) {
   }
   return {o: {...o, a, calc: V.includes('comp') && vari.comp === 'boleta' ? 's' : o.calc}, notas};
 }
+function tituloVar(o) {
+  const V = varsDe(o).map(x => x[0]), k = V.includes('pago') ? vari.pago : V.includes('cobro') ? vari.cobro : null;
+  let t = o.t.replace(/\s+al (cr[eé]dito|contado)\b/i, '').replace(/\s+con boleta( de venta)?\b/i, '');
+  if (!k) return o.t;
+  if (V.includes('comp') && vari.comp === 'boleta' && !/boleta/i.test(t)) t += ' con boleta';
+  return t + (k === 'credito' ? ' al crédito' : k === 'caja' ? ' al contado (efectivo)' : ' al contado (banco)');
+}
 function pintarVari(o) {
   const V = varsDe(o);
   return V.length ? `<div class="card vari"><h3 style="margin:0 0 6px;font-size:.92rem">Elige tu caso</h3>${V.map(([k, t, ops]) => `<label class="field"><span>${esc(t)}</span><select data-vari="${k}">${ops.map(([v, l]) => `<option value="${v}" ${vari[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`).join('')}</div>` : '';
@@ -2531,7 +2547,7 @@ function pintarDet() {
     return `<div class="as ${a.d ? 'dest' : ''}"><h3>${esc(a.t)}</h3><div class="tw"><table><thead><tr><th>Cuenta</th><th>Denominación</th><th class="c">Debe</th><th class="c">Haber</th></tr></thead><tbody>${rows}${con && (d || h) ? `<tr class="tot"><td></td><td>Totales</td><td class="c"><span class="amt">${nf(d)}</span></td><td class="c"><span class="amt">${nf(h)}</span></td></tr>` : ''}</tbody></table></div></div>`; };
   const whys = []; asientos.forEach(a => a.l.forEach(([c, s, , w]) => { const k = cuentaVista(c)[0] + s; if (w && !whys.some(x => x.k === k)) whys.push({k, c: cuentaVista(c)[0], s, w}); }));
   const notaM = o.ia ? '' : [...notas, con ? [o.calc === 'vc' && !parseNum($('monto2').value) ? 'Costo estimado al 70% de la venta: escribe el costo real para que sea exacto.' : '', o.calc === 'cuo' && !parseNum($('monto2').value) ? 'Interés estimado al 10% de la cuota: escribe el interés real.' : '', o.calc === 'det' ? 'Detracción del 12% redondeada a soles (cambia el % según el tipo de servicio).' : ''].filter(Boolean).join(' ') : (ajustes.mon ? 'Escribe el importe para ver los montos.' : '')].filter(Boolean).join(' ');
-  $('det').innerHTML = `${o.ia ? '<p class="note" style="margin:0"><span class="tag fam">Claude</span> Este asiento lo armó Claude: revísalo antes de usarlo.</p>' : ''}<div><h2>${esc(o0.t)}</h2><p class="sub">${esc(o0.sub || o0.cat)}${con && M.base != null ? ` · Base ${nf(M.base)} + IGV ${nf(M.igv)} = ${nf(M.tot)}` : ''}</p>${notaM ? `<p class="note nota">${esc(notaM)}</p>` : ''}</div>
+  $('det').innerHTML = `${o.ia ? '<p class="note" style="margin:0"><span class="tag fam">Claude</span> Este asiento lo armó Claude: revísalo antes de usarlo.</p>' : ''}<div><h2>${esc(tituloVar(o0))}</h2><p class="sub">${esc(o0.sub || o0.cat)}${con && M.base != null ? ` · Base ${nf(M.base)} + IGV ${nf(M.igv)} = ${nf(M.tot)}` : ''}</p>${notaM ? `<p class="note nota">${esc(notaM)}</p>` : ''}</div>
     ${pintarVari(o0)}
     ${asientos.map(tabla).join('')}
     ${ajustes.why ? `<details class="card wcard" open><summary>¿Por qué?</summary><div class="why">${whys.map(x => `<p><b>${esc(x.c)} al ${x.s === 'D' ? 'Debe' : 'Haber'}:</b> ${esc(x.w)}</p>`).join('')}</div></details>` : ''}
@@ -2924,7 +2940,6 @@ if (!MIC_OK) $('kbmic').hidden = false;
 
 aplicarTema(); pintarAjustes(); buscarCuentas();
 if (matchMedia('(max-width:820px)').matches) document.querySelectorAll('.aj').forEach(d => d.open = false);
-$('q').value = 'compra de artículos de limpieza al contado'; $('monto').value = '236.00';
 buscar();
 ir(TITULOS[location.hash.slice(1)] ? location.hash.slice(1) : 'asientos', true);
 </script>
