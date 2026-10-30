@@ -14,7 +14,7 @@
 <style>
 /* Layout: barra lateral en PC, pestañas abajo en celular; en Asientos, lista y asiento lado a lado en PC */
 :root{
-  --bg:#E9DCC3; --surface:#F4EDE0; --paper:#FBF7EE; --ink:#2A2414; --muted:#6B604A; --line:#D9C7A2; --soft:#E9DFCC;
+  --bg:#EFE5D1; --surface:#FFFCF5; --paper:#FFFCF5; --ink:#2A2418; --muted:#6B5F49; --line:#DFD0B4; --soft:#F3EADA;
   --brand:#0D5C46; --brand2:#14805F; --on:#FFFFFF; --gold:#B8862F; --bad:#A2452F;
   --f:"Archivo",ui-sans-serif,system-ui,sans-serif; --m:"JetBrains Mono",ui-monospace,Menlo,monospace;
 }
@@ -153,6 +153,13 @@ details[open]>summary::after{transform:rotate(180deg)}
 .din{display:grid;gap:8px;background:var(--soft);border-radius:12px;padding:10px 12px}.din p{margin:0;font-size:.9rem}.din .x{width:20px;height:20px;font-size:.7rem;vertical-align:-4px;margin-right:4px}
 .ruta{margin:8px 0 0;font-size:.78rem;color:var(--muted)}.ruta span{white-space:normal}
 .usos{margin-top:10px}.usos summary{font-size:.9rem}
+.mrow{display:flex;gap:8px;align-items:stretch;min-width:0}.mrow>input,.mrow>textarea{flex:1;min-width:0}
+.mic{flex:none;width:50px;border-radius:12px;border:1.5px solid var(--brand);background:var(--paper);color:var(--brand);display:grid;place-items:center}
+.mic svg{width:22px;height:22px}
+.mic.on{background:var(--bad);border-color:var(--bad);color:#fff;animation:pulso 1.2s infinite}
+@keyframes pulso{0%{box-shadow:0 0 0 0 rgba(162,69,47,.5)}100%{box-shadow:0 0 0 14px rgba(162,69,47,0)}}
+.micst{margin:6px 0 0;font-size:.85rem;background:var(--soft);border-radius:10px;padding:8px 10px}
+.micst.err{color:var(--bad)}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:12px;font-size:.88rem;z-index:50;max-width:90vw}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -177,7 +184,7 @@ details[open]>summary::after{transform:rotate(180deg)}
     <section data-sec="asientos">
       <div class="split">
         <div>
-          <label class="field"><span>¿Qué operación quieres registrar?</span><input id="q" type="search" class="q" placeholder="Ej. compra de artículos de limpieza al contado" autocomplete="off"></label>
+          <label class="field"><span>¿Qué operación quieres registrar?</span><div class="mrow"><input id="q" type="search" class="q" placeholder="Ej. compra de artículos de limpieza al contado" autocomplete="off"><button type="button" class="mic" data-mic="q" aria-label="Dictar con el micrófono" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div></label><p class="micst" id="micst-q" hidden></p>
           <div class="row" style="margin-top:8px">
             <label class="field"><span>Importe (S/)</span><input id="monto" inputmode="decimal" placeholder="1,180.00" autocomplete="off"></label>
             <label class="field" id="m2w" hidden><span id="m2l">Costo</span><input id="monto2" inputmode="decimal" placeholder="opcional" autocomplete="off"></label>
@@ -191,7 +198,7 @@ details[open]>summary::after{transform:rotate(180deg)}
 
     <!-- PLAN DE CUENTAS -->
     <section data-sec="cuentas" hidden>
-      <label class="field"><span>Escribe un código o un nombre</span><input id="cq" type="search" class="q" placeholder="Ej. 2, 20, 2011 o «mercaderías»" autocomplete="off" inputmode="search"></label>
+      <label class="field"><span>Escribe un código o un nombre</span><div class="mrow"><input id="cq" type="search" class="q" placeholder="Ej. 2, 20, 2011 o «mercaderías»" autocomplete="off" inputmode="search"><button type="button" class="mic" data-mic="cq" aria-label="Dictar con el micrófono" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div></label><p class="micst" id="micst-cq" hidden></p>
       <div class="crumb" id="crumb"></div>
       <div id="cdet"></div>
       <p class="note" id="cn"></p>
@@ -204,10 +211,12 @@ details[open]>summary::after{transform:rotate(180deg)}
       <details class="card sugd"><summary>Preguntas de ejemplo</summary><div class="list" id="sug" style="margin-top:8px"></div></details>
       <div class="chat" id="chat"></div>
       <div class="composer">
-        <textarea id="cin" placeholder="Ej. ¿La compra de útiles de limpieza va a la 656 o a la 6032?"></textarea>
+        <div class="mrow ta"><textarea id="cin" placeholder="Ej. ¿La compra de útiles de limpieza va a la 656 o a la 6032?"></textarea><button type="button" class="mic" data-mic="cin" aria-label="Dictar con el micrófono" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div>
         <div style="display:grid;gap:6px"><button class="btn" id="csend">Preguntar</button><button class="btn2" id="cstop" hidden>Detener</button></div>
       </div>
+      <p class="micst" id="micst-cin" hidden></p>
       <p class="note" id="cnote"></p>
+      <p class="note" id="kbmic" hidden>Para dictar aquí, toca el micrófono 🎤 de tu teclado.</p>
     </section>
 
     <!-- AJUSTES -->
@@ -2654,7 +2663,7 @@ $('cin').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey 
 
 /* ===== Ajustes: colores ===== */
 const ACENTOS = [['cbo', 'Verde CBO', '#0D5C46', '#14805F', '#2E9C77'], ['bosque', 'Bosque', '#2F5A1E', '#4B8A2E', '#7FBF5A'], ['esmeralda', 'Esmeralda', '#0E6A4E', '#17956D', '#3FC495'], ['oceano', 'Océano', '#0B5A86', '#1580C2', '#4FA8E0'], ['indigo', 'Índigo', '#2F2A85', '#4740C9', '#8A84FF'], ['vino', 'Vino', '#7A1F3D', '#A7315A', '#E07AA0'], ['terracota', 'Terracota', '#8E3F22', '#B4532F', '#E89470'], ['grafito', 'Grafito', '#2A2E36', '#4B5262', '#9AA4B6']];
-const FONDOS = [['beige', 'Beige', '#E9DCC3', '#F4EDE0', '#FBF7EE', '#D9C7A2', '#E9DFCC'], ['arena', 'Arena', '#F4EDE0', '#FBF7EE', '#FFFDF8', '#E2D6BE', '#EDE4D2'], ['blanco', 'Blanco', '#F3F5F2', '#FFFFFF', '#FFFFFF', '#DDE3DE', '#E7EEE9'], ['perla', 'Gris perla', '#E6E7EA', '#F4F5F7', '#FBFBFC', '#D2D5DB', '#E9EAEE'], ['menta', 'Menta', '#DCEAE2', '#EEF5F0', '#F6FAF7', '#CFE0D5', '#E3EFE8'], ['celeste', 'Celeste', '#DDE9F3', '#EDF3F9', '#F5F9FC', '#CBDBE8', '#E4EEF6']];
+const FONDOS = [['beige', 'Beige', '#EFE5D1', '#FFFCF5', '#FFFCF5', '#DFD0B4', '#F3EADA'], ['arena', 'Arena', '#F4EDE0', '#FBF7EE', '#FFFDF8', '#E2D6BE', '#EDE4D2'], ['oscuro', 'Beige oscuro', '#E9DCC3', '#F4EDE0', '#FBF7EE', '#D9C7A2', '#E9DFCC'], ['blanco', 'Blanco', '#F3F5F2', '#FFFFFF', '#FFFFFF', '#DDE3DE', '#E7EEE9'], ['perla', 'Gris perla', '#E6E7EA', '#F4F5F7', '#FBFBFC', '#D2D5DB', '#E9EAEE'], ['menta', 'Menta', '#DCEAE2', '#EEF5F0', '#F6FAF7', '#CFE0D5', '#E3EFE8'], ['celeste', 'Celeste', '#DDE9F3', '#EDF3F9', '#F5F9FC', '#CBDBE8', '#E4EEF6']];
 function aplicarTema() {
   const r = document.documentElement;
   if (ajustes.modo === 'oscuro') r.setAttribute('data-theme', 'dark'); else if (ajustes.modo === 'claro') r.setAttribute('data-theme', 'light'); else r.removeAttribute('data-theme');
@@ -2859,6 +2868,58 @@ function screenFx(to, src, force) {
   done();
 }
 
+
+
+/* ===== Dictado por voz (micrófono) ===== */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const enIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+const MIC_OK = !!SR && !enIframe && window.isSecureContext !== false;
+let rec = null, recCampo = null;
+const MIC_ERR = {
+  'not-allowed': 'El micrófono está bloqueado. Permítelo: toca el candado junto a la dirección (o Ajustes del navegador) → Micrófono → Permitir.',
+  'service-not-allowed': 'El navegador no permite el dictado aquí. Usa el micrófono de tu teclado.',
+  'no-speech': 'No te escuché. Toca el micrófono y habla cerca del celular.',
+  'audio-capture': 'No se encontró un micrófono en este equipo.',
+  'network': 'El dictado necesita internet. Revisa tu conexión.',
+  'language-not-supported': 'El dictado en español no está disponible en este navegador.',
+};
+function micEstado(campo, txt, err) { const el = $('micst-' + campo); if (!el) return; el.hidden = !txt; el.textContent = txt || ''; el.classList.toggle('err', !!err); }
+function numeroDe(t) { const m = t.replace(/(\d)\s+(?=\d{3}\b)/g, '$1').match(/(\d[\d.,]*)\s*(soles|sol|nuevos soles)?/i); return m ? parseNum(m[1].replace(/,(?=\d{3})/g, '')) : 0; }
+function aplicarDictado(campo, texto, final) {
+  const el = $(campo); if (!el) return;
+  if (campo === 'q' && final) {
+    const m = texto.match(/(?:por|de|monto(?: de)?|importe(?: de)?|total(?: de)?)\s+(?:s\/\.?\s*)?(\d[\d.,\s]*)\s*(?:soles|sol)?\s*$/i) || texto.match(/(\d[\d.,\s]*)\s*(?:soles|sol)\b/i);
+    if (m) { const v = numeroDe(m[1]); if (v) { $('monto').value = nf(v); texto = texto.replace(m[0], '').trim(); } }
+  }
+  el.value = campo === 'cin' && el.dataset.base ? (el.dataset.base + ' ' + texto).trim() : texto;
+  el.dispatchEvent(new Event('input', {bubbles: true}));
+}
+function micParar() { if (rec) try { rec.stop(); } catch {} }
+function micIniciar(campo, btn) {
+  if (rec) { micParar(); return; }
+  rec = new SR(); recCampo = campo;
+  rec.lang = 'es-PE'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+  const el = $(campo); el.dataset.base = campo === 'cin' ? el.value.trim() : '';
+  let final = '', huboTexto = false;
+  btn.classList.add('on'); btn.setAttribute('aria-label', 'Detener dictado');
+  micEstado(campo, 'Escuchando… habla ahora.');
+  rec.onresult = ev => {
+    let inter = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) { const r = ev.results[i]; if (r.isFinal) final += r[0].transcript + ' '; else inter += r[0].transcript; }
+    const t = (final + inter).replace(/\s+/g, ' ').trim(); huboTexto = huboTexto || !!t;
+    aplicarDictado(campo, t, !inter); micEstado(campo, '🎤 ' + t);
+  };
+  rec.onerror = ev => { if (ev.error === 'aborted') return; micEstado(campo, MIC_ERR[ev.error] || 'No se pudo usar el micrófono (' + ev.error + ').', true); huboTexto = true; };
+  rec.onend = () => {
+    btn.classList.remove('on'); btn.setAttribute('aria-label', 'Dictar con el micrófono');
+    if (final.trim()) { aplicarDictado(campo, final.replace(/\s+/g, ' ').trim(), true); micEstado(campo, '✓ Entendí: «' + $(campo).value + '». Si algo salió mal, corrígelo o vuelve a dictar.'); }
+    else if (!huboTexto) micEstado(campo, MIC_ERR['no-speech'], true);
+    rec = null; recCampo = null;
+  };
+  try { rec.start(); } catch (e) { btn.classList.remove('on'); micEstado(campo, 'No se pudo iniciar el micrófono. Intenta otra vez.', true); rec = null; }
+}
+document.querySelectorAll('[data-mic]').forEach(b => { b.hidden = !MIC_OK; b.addEventListener('click', e => { e.preventDefault(); micIniciar(b.dataset.mic, b); }); });
+if (!MIC_OK) $('kbmic').hidden = false;
 
 
 aplicarTema(); pintarAjustes(); buscarCuentas();
