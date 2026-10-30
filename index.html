@@ -136,6 +136,23 @@ h4{margin:14px 0 6px;font-size:.74rem;letter-spacing:.07em;text-transform:upperc
 .trb{text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:9px 11px;display:grid;gap:2px;min-width:0}
 .trb small{color:var(--muted);font-size:.74rem;line-height:1.3}
 .trb[aria-pressed="true"]{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}
+.codb{border:0;background:none;padding:0;font:inherit;color:var(--brand);font-family:var(--m);font-weight:700;text-decoration:underline dotted;text-underline-offset:3px}
+.vari{display:grid;gap:8px}
+.nota{margin:6px 0 0;background:var(--soft);border-radius:10px;padding:8px 10px;color:var(--ink)}
+details>summary{cursor:pointer;font-weight:800;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px}
+details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:"▾";color:var(--brand);transition:transform .2s}
+details[open]>summary::after{transform:rotate(180deg)}
+.wcard summary{font-size:.95rem;margin-bottom:0}.wcard[open] summary{margin-bottom:8px}
+.aj summary{font-size:.92rem}.aj[open] summary{margin-bottom:6px}
+.sugd{margin-bottom:12px}.sugd summary{font-size:.9rem}
+.cdcard{margin-bottom:12px}
+.cdh{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cdh code{font-family:var(--m);font-weight:800;font-size:1.3rem;color:var(--on);background:var(--brand);border-radius:10px;padding:6px 10px}
+.cdh b{font-size:1.05rem;display:block}.cdh small{color:var(--muted);font-size:.78rem}
+.din{display:grid;gap:8px;background:var(--soft);border-radius:12px;padding:10px 12px}.din p{margin:0;font-size:.9rem}.din .x{width:20px;height:20px;font-size:.7rem;vertical-align:-4px;margin-right:4px}
+.ruta{margin:8px 0 0;font-size:.78rem;color:var(--muted)}.ruta span{white-space:normal}
+.usos{margin-top:10px}.usos summary{font-size:.9rem}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:12px;font-size:.88rem;z-index:50;max-width:90vw}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -165,7 +182,7 @@ h4{margin:14px 0 6px;font-size:.74rem;letter-spacing:.07em;text-transform:upperc
             <label class="field"><span>Importe (S/)</span><input id="monto" inputmode="decimal" placeholder="1,180.00" autocomplete="off"></label>
             <label class="field" id="m2w" hidden><span id="m2l">Costo</span><input id="monto2" inputmode="decimal" placeholder="opcional" autocomplete="off"></label>
           </div>
-          <div class="chips" id="cats"></div>
+          <label class="field" style="margin:10px 0"><span>Tipo de operación</span><select id="catsel"></select></label>
           <div class="list" id="res"></div>
         </div>
         <div class="det" id="det"></div>
@@ -176,6 +193,7 @@ h4{margin:14px 0 6px;font-size:.74rem;letter-spacing:.07em;text-transform:upperc
     <section data-sec="cuentas" hidden>
       <label class="field"><span>Escribe un código o un nombre</span><input id="cq" type="search" class="q" placeholder="Ej. 2, 20, 2011 o «mercaderías»" autocomplete="off" inputmode="search"></label>
       <div class="crumb" id="crumb"></div>
+      <div id="cdet"></div>
       <p class="note" id="cn"></p>
       <div class="list" id="cl"></div>
     </section>
@@ -183,7 +201,7 @@ h4{margin:14px 0 6px;font-size:.74rem;letter-spacing:.07em;text-transform:upperc
     <!-- CONSULTAS -->
     <section data-sec="consultas" hidden>
       <p class="note" style="margin-top:0">Pregunta lo que quieras de contabilidad peruana (PCGE 2019, SUNAT, IGV, renta, planilla) o pega un asiento para que lo revise y te diga qué corregir.</p>
-      <div class="chips" id="sug"></div>
+      <details class="card sugd"><summary>Preguntas de ejemplo</summary><div class="list" id="sug" style="margin-top:8px"></div></details>
       <div class="chat" id="chat"></div>
       <div class="composer">
         <textarea id="cin" placeholder="Ej. ¿La compra de útiles de limpieza va a la 656 o a la 6032?"></textarea>
@@ -195,21 +213,18 @@ h4{margin:14px 0 6px;font-size:.74rem;letter-spacing:.07em;text-transform:upperc
     <!-- AJUSTES -->
     <section data-sec="ajustes" hidden>
       <div class="grid2">
-        <div class="card">
-          <h4 style="margin-top:0">Color predominante (fondo)</h4><div class="sw" id="fondos"></div>
+        <details class="card aj" open><summary>Colores y modo</summary>
+          <h4>Color predominante (fondo)</h4><div class="sw" id="fondos"></div>
           <h4>Color de acento</h4><div class="sw" id="acentos"></div>
           <h4>Modo</h4><div class="seg" id="modo"></div>
-        </div>
-        <div class="card">
-          <h4 style="margin-top:0">Cómo mostrar el asiento</h4>
+        </details>
+        <details class="card aj" open><summary>Cómo mostrar el asiento</summary>
           <label class="tg"><span>Mostrar montos<small>Con el importe calcula base, IGV, retenciones…</small></span><input type="checkbox" id="oMon"></label>
           <label class="tg"><span>Incluir asientos de destino<small>Clase 9 / 79 y movimientos de almacén</small></span><input type="checkbox" id="oDes"></label>
           <label class="tg"><span>Explicar cada cuenta<small>Muestra el ¿Por qué?</small></span><input type="checkbox" id="oWhy"></label>
           <div class="tg"><span>Nivel de la cuenta<small>Divisionaria completa o solo la cuenta (2 dígitos)</small></span><div class="seg" id="nivel" style="min-width:150px"></div></div>
-        </div>
-        <div class="card" style="grid-column:1/-1">
-          <h4 style="margin-top:0">Transición entre pantallas</h4><div class="trx" id="trx"></div>
-        </div>
+        </details>
+        <details class="card aj" style="grid-column:1/-1"><summary>Transición entre pantallas</summary><div class="trx" id="trx" style="margin-top:10px"></div></details>
       </div>
     </section>
   </main>
@@ -2229,6 +2244,87 @@ const FAM = [
   {n: 'Contratistas', k: 'subcontrato contratista tercerizacion', c: '638', tipo: 'gasto', why: 'Servicios de contratistas.'},
 ];
 
+/* ===== Para qué sirve cada cuenta (dinámica resumida del PCGE 2019) ===== */
+const NAT = {1: ['Activo', 'deudora'], 2: ['Activo (existencias)', 'deudora'], 3: ['Activo (inmovilizado)', 'deudora'], 4: ['Pasivo', 'acreedora'], 5: ['Patrimonio', 'acreedora'], 6: ['Gasto por naturaleza', 'deudora'], 7: ['Ingreso', 'acreedora'], 8: ['Saldos intermediarios de gestión', 'deudora o acreedora según el resultado'], 9: ['Contabilidad analítica (destino)', 'deudora']};
+const DIN = {
+  '10': ['El dinero que tiene la empresa: caja, fondos fijos, cuentas corrientes y depósitos.', 'Entra dinero: cobros, depósitos, préstamos recibidos, aportes.', 'Sale dinero: pagos a proveedores, sueldos, tributos, retiros.'],
+  '11': ['Inversiones financieras que se compran para negociar a corto plazo.', 'Compra de la inversión y aumentos de su valor.', 'Venta de la inversión o baja de su valor.'],
+  '12': ['Lo que los clientes le deben a la empresa por ventas al crédito.', 'Emites la factura o boleta al crédito, o canjeas por letra.', 'El cliente paga, devuelve mercadería (nota de crédito) o se castiga la deuda.'],
+  '13': ['Lo que deben empresas relacionadas por ventas.', 'Venta al crédito a una empresa relacionada.', 'Cobro o nota de crédito.'],
+  '14': ['Lo que deben el personal, los socios o directores: préstamos, adelantos, entregas a rendir, aportes por pagar.', 'Prestas, adelantas sueldo o el socio se compromete a aportar.', 'Te devuelven, se descuenta en planilla o el socio paga su aporte.'],
+  '16': ['Otras cuentas por cobrar: reclamos, intereses, venta de activos, tributos por acreditar.', 'Nace el derecho de cobro.', 'Lo cobras o se aplica.'],
+  '17': ['Cuentas por cobrar diversas a relacionadas.', 'Nace el derecho de cobro.', 'Lo cobras.'],
+  '18': ['Servicios pagados por adelantado: seguros, alquileres, publicidad.', 'Pagas el servicio antes de usarlo.', 'Se va devengando el gasto mes a mes.'],
+  '19': ['Estimación de cobranza dudosa: resta a las cuentas por cobrar.', 'Castigas la deuda que ya no cobrarás.', 'Reconoces que una deuda es de cobro dudoso (contra 684/6871).'],
+  '20': ['Mercaderías: lo que compras para vender sin transformar.', 'Ingresa al almacén (destino de la compra, contra 611) o el cliente devuelve.', 'Sale por venta (costo de ventas 691) o devolución al proveedor.'],
+  '21': ['Productos terminados que fabrica la empresa.', 'Terminas la producción (contra 711).', 'Vendes (costo 692).'],
+  '24': ['Materias primas para fabricar.', 'Ingresan al almacén (contra 612).', 'Se consumen en producción.'],
+  '25': ['Materiales auxiliares, suministros (combustible, lubricantes) y repuestos que guardas en almacén.', 'Ingresan al almacén (contra 613).', 'Se consumen.'],
+  '26': ['Envases y embalajes.', 'Ingresan al almacén (contra 614).', 'Se usan o venden.'],
+  '28': ['Existencias por recibir (compradas, aún en camino).', 'Compra en tránsito.', 'Llegan al almacén.'],
+  '29': ['Desvalorización de existencias: resta al inventario.', 'Se recupera el valor o se da de baja.', 'Reconoces la pérdida de valor (contra 695).'],
+  '30': ['Inversiones mobiliarias de largo plazo.', 'Compra de la inversión.', 'Venta.'],
+  '31': ['Propiedades de inversión: inmuebles para alquilar o ganar plusvalía.', 'Compra.', 'Venta o baja.'],
+  '32': ['Activos por derecho de uso (arrendamientos).', 'Firmas el arrendamiento.', 'Termina o se da de baja.'],
+  '33': ['Propiedad, planta y equipo: terrenos, edificios, maquinaria, vehículos, muebles, cómputo.', 'Compras o recibes el activo como aporte.', 'Lo vendes o das de baja.'],
+  '34': ['Intangibles: software, licencias, marcas, patentes.', 'Compras o desarrollas el intangible.', 'Lo vendes o das de baja.'],
+  '37': ['Activo diferido: impuesto a la renta diferido, intereses diferidos.', 'Nace el activo diferido.', 'Se aplica o devenga.'],
+  '38': ['Otros activos: obras de arte, bienes en comodato.', 'Ingreso del bien.', 'Salida.'],
+  '39': ['Depreciación y amortización acumulada: resta al activo fijo e intangible.', 'Vendes o das de baja el activo.', 'Registras la depreciación del mes o año (contra 68).'],
+  '40': ['Tributos por pagar: IGV, renta (3ra, 4ta, 5ta), EsSalud, ONP, tributos municipales; también el crédito fiscal del IGV.', 'Pagas el tributo, o registras el IGV de tus compras (crédito fiscal), retenciones y percepciones a favor.', 'Nace la deuda: IGV de tus ventas, retenciones que haces, EsSalud, ONP, renta.'],
+  '41': ['Remuneraciones por pagar: sueldos, gratificaciones, vacaciones, CTS.', 'Pagas al trabajador o descuentas adelantos.', 'Provisionas la planilla o el beneficio.'],
+  '42': ['Lo que le debes a tus proveedores por compras de bienes y servicios (y honorarios en la 424).', 'Pagas, devuelves mercadería o canjeas por letra.', 'Recibes la factura, boleta o recibo de la compra o servicio.'],
+  '43': ['Deudas con empresas relacionadas por compras.', 'Pagas.', 'Recibes la factura.'],
+  '44': ['Deudas con socios y directores: préstamos, dividendos, dietas.', 'Pagas.', 'Nace la deuda (préstamo recibido, dividendos acordados).'],
+  '45': ['Préstamos y obligaciones financieras con bancos y otras entidades.', 'Pagas la cuota (amortización).', 'Recibes el préstamo.'],
+  '46': ['Cuentas por pagar diversas: compra de activo fijo (465), depósitos recibidos, otras.', 'Pagas.', 'Nace la deuda (por ejemplo, compras activo fijo al crédito).'],
+  '47': ['Cuentas por pagar diversas a relacionadas.', 'Pagas.', 'Nace la deuda.'],
+  '48': ['Provisiones: litigios, garantías, desmantelamiento.', 'Usas o revierte la provisión.', 'Registras la provisión (contra 689).'],
+  '49': ['Pasivo diferido: impuesto diferido, ingresos diferidos.', 'Se aplica o devenga.', 'Nace el pasivo diferido.'],
+  '50': ['Capital: aportes de socios (acciones o participaciones).', 'Reduces capital.', 'Los socios suscriben su aporte o se capitalizan utilidades.'],
+  '51': ['Acciones de inversión.', 'Redención.', 'Emisión.'],
+  '52': ['Capital adicional: primas y donaciones.', 'Se capitaliza o devuelve.', 'Recibes primas o aportes adicionales.'],
+  '56': ['Resultados no realizados (revaluaciones a valor razonable).', 'Baja de valor.', 'Sube el valor.'],
+  '57': ['Excedente de revaluación.', 'Se realiza o reduce.', 'Revalúas un activo.'],
+  '58': ['Reservas: legal (10% de la utilidad) y otras.', 'Las usas o capitalizas.', 'Las constituyes desde las utilidades.'],
+  '59': ['Resultados acumulados: utilidades o pérdidas de años anteriores.', 'Distribuyes dividendos, constituyes reserva o registras pérdidas.', 'Trasladas la utilidad del ejercicio.'],
+  '60': ['Compras de bienes: mercadería, materias primas, suministros, envases.', 'Recibes la factura de compra (sin IGV).', 'Devuelves o te hacen descuentos; al cierre se cancela contra 61 / 69.'],
+  '61': ['Variación de existencias: lleva las compras (60) al almacén (20-28).', 'Al vender o consumir, según el método.', 'Destino de la compra: ingresa al almacén.'],
+  '62': ['Gastos de personal: sueldos, gratificaciones, vacaciones, EsSalud, CTS.', 'Registras la planilla y los beneficios.', 'Al cierre (o por destino contra 79).'],
+  '63': ['Servicios de terceros: transporte, asesoría, mantenimiento, alquileres, luz, agua, teléfono, internet, publicidad.', 'Recibes el comprobante del servicio (sin IGV).', 'Al cierre.'],
+  '64': ['Tributos que son gasto: ITF, predial, arbitrios, impuesto vehicular, licencias.', 'Se devenga el tributo.', 'Al cierre.'],
+  '65': ['Otros gastos de gestión: seguros, suscripciones, suministros que consumes, costo de activos vendidos, donaciones.', 'Se devenga el gasto.', 'Al cierre.'],
+  '66': ['Pérdidas por medición de activos a valor razonable.', 'Pierde valor el activo.', 'Al cierre.'],
+  '67': ['Gastos financieros: intereses, diferencia de cambio, descuentos que concedes.', 'Se devenga el interés o la pérdida.', 'Al cierre.'],
+  '68': ['Depreciación, amortización, estimaciones y provisiones del ejercicio.', 'Registras la depreciación o la estimación.', 'Al cierre.'],
+  '69': ['Costo de ventas: lo que te costó lo que vendiste.', 'Al vender, sale la mercadería del almacén.', 'El cliente devuelve mercadería.'],
+  '70': ['Ventas de mercadería, productos y servicios (sin IGV).', 'Devoluciones (709) o al cierre.', 'Emites la factura o boleta de venta.'],
+  '71': ['Variación de la producción almacenada.', 'Según el movimiento.', 'Terminas productos o servicios.'],
+  '72': ['Producción de activo inmovilizado.', 'Al cierre.', 'Construyes tu propio activo.'],
+  '73': ['Descuentos, rebajas y bonificaciones obtenidos.', 'Al cierre.', 'Tu proveedor te da el descuento.'],
+  '74': ['Descuentos, rebajas y bonificaciones concedidos.', 'Das el descuento al cliente.', 'Al cierre.'],
+  '75': ['Otros ingresos de gestión: alquileres, comisiones, venta de activos, subsidios.', 'Al cierre.', 'Nace el ingreso.'],
+  '76': ['Ganancia por medición de activos a valor razonable.', 'Al cierre.', 'Sube el valor del activo.'],
+  '77': ['Ingresos financieros: intereses, diferencia en cambio, descuentos obtenidos por pronto pago.', 'Al cierre.', 'Nace el ingreso financiero.'],
+  '78': ['Cargas cubiertas por provisiones.', 'Al cierre.', 'Usas una provisión.'],
+  '79': ['Cargas imputables a cuentas de costos y gastos: contrapartida de los asientos de destino.', 'Al cierre se cancela contra la clase 9.', 'En cada destino, junto con 94, 95, 97 u otras de la clase 9.'],
+  '80': ['Margen comercial (cierre).', 'Costo de ventas al cierre.', 'Ventas al cierre.'],
+  '81': ['Producción del ejercicio (cierre).', 'Según el cierre.', 'Según el cierre.'],
+  '82': ['Valor agregado (cierre).', 'Consumos.', 'Margen y producción.'],
+  '83': ['Excedente bruto de explotación (cierre).', 'Gastos de personal y tributos.', 'Valor agregado.'],
+  '84': ['Resultado de explotación (cierre).', 'Gastos de gestión, depreciación.', 'Excedente bruto e ingresos de gestión.'],
+  '85': ['Resultado antes de participaciones e impuestos (cierre).', 'Gastos financieros.', 'Resultado de explotación e ingresos financieros.'],
+  '88': ['Impuesto a la renta del ejercicio.', 'Registras el impuesto a la renta anual.', 'Al cierre.'],
+  '89': ['Determinación del resultado del ejercicio: utilidad o pérdida.', 'Pérdida, o al trasladar la utilidad a la 59.', 'Utilidad.'],
+  '90': ['Costos de producción (analítica).', 'Destino de costos de producción.', 'Al cierre.'],
+  '91': ['Costos por distribuir (analítica).', 'Destino.', 'Al distribuir.'],
+  '92': ['Costos de producción (analítica).', 'Destino.', 'Al cierre.'],
+  '94': ['Gastos administrativos (destino).', 'Destino de los gastos del área administrativa (contra 79).', 'Al cierre (contra 79).'],
+  '95': ['Gastos de ventas (destino).', 'Destino de los gastos del área de ventas (contra 79).', 'Al cierre (contra 79).'],
+  '96': ['Gastos de producción (destino).', 'Destino.', 'Al cierre.'],
+  '97': ['Gastos financieros (destino).', 'Destino de intereses y gastos financieros (contra 79).', 'Al cierre (contra 79).'],
+};
+
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const LS = {get(k, d) { try { const v = localStorage.getItem('pcge-' + k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { try { localStorage.setItem('pcge-' + k, JSON.stringify(v)); } catch {} }};
@@ -2268,7 +2364,7 @@ window.addEventListener('hashchange', () => ir(location.hash.slice(1), true));
 /* ===== Asientos: búsqueda ===== */
 const STOP = new Set('de del la las el los con por para al a en y un una su sus que se mi mis lo es o como cuando'.split(' '));
 const PALABRAS_COMPRA = /\b(compra|compre|compramos|comprar|adquisicion|adquiri|pago|pague|pagamos|gasto|servicio|alquiler|recibo)\b/;
-let filtroCat = '', sel = null, verTodos = false;
+let filtroCat = '', sel = null, verTodos = false, ultQ = null;
 function famDe(qn) {
   if (/\b(venta|vendi|vendo|vender)\b/.test(qn)) return null;
   const compra = /\b(compra|compre|compramos|comprar|adquisicion|adquiri)\b/.test(qn), pago = /\b(pago|pague|pagamos|recibo|servicio|alquiler)\b/.test(qn);
@@ -2282,12 +2378,12 @@ function famDe(qn) {
   return best && best.f;
 }
 function titulo0(verbo, f) {
-  let t = $('q').value.trim().replace(/\s+(al contado|al cr[eé]dito|con factura|con boleta|en efectivo|por transferencia|con yape|con plin)\b/gi, '').replace(/\s+/g, ' ');
+  let t = $('q').value.trim().replace(/\s+/g, ' ');
   if (t.length < 4 || t.length > 70) t = verbo + ' ' + f.n.toLowerCase();
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 function opDeFamilia(f, qn) {
-  const contado = /\b(contado|efectivo|transferencia|yape|plin|caja)\b/.test(qn), boleta = /\bboleta\b/.test(qn) && f.tipo !== 'activo';
+  const contado = false, boleta = false;
   const lado = f.tipo === 'activo' ? (f.deuda || '4654') : '4212';
   const k = f.sinIgv || boleta ? 'tot' : 'base';
   const l1 = [[f.c, 'D', k, f.why]];
@@ -2298,7 +2394,7 @@ function opDeFamilia(f, qn) {
   if (f.tipo === 'exist' && f.dest) a.push({t: 'Destino: ingreso al almacén', d: 1, l: [[f.dest[0], 'D', k, 'Entra al almacén.'], [f.dest[1], 'H', k, 'Variación de existencias.']]});
   if (contado) a.push(PAGO(lado, 'tot', 'Se paga en el momento.'));
   const verbo = f.c.startsWith('63') || f.c === '651' || f.c === '653' || f.c === '624' ? 'Pago de' : 'Compra de';
-  return {id: 'fam:' + f.n, cat: f.tipo === 'activo' ? 'Activo fijo' : 'Compras', fam: f, t: titulo0(verbo, f) + ` ${contado ? 'al contado' : 'al crédito'}${boleta ? ' con boleta' : ''}`, sub: `Se registra como: ${f.n} (${f.c} ${nombre(f.c)})`, calc: f.sinIgv || boleta ? 's' : 'g', a};
+  return {id: 'fam:' + f.n, cat: f.tipo === 'activo' ? 'Activo fijo' : 'Compras', fam: f, t: titulo0(verbo, f), sub: `Se registra como: ${f.n} (${f.c} ${nombre(f.c)})`, calc: f.sinIgv || boleta ? 's' : 'g', a};
 }
 function buscar() {
   const qn = norm($('q').value), toks = qn.split(' ').filter(t => t.length > 2 && !STOP.has(t));
@@ -2313,7 +2409,8 @@ function buscar() {
   if (!qn && !filtroCat) { const fav = LS.get('fav', []); L.sort((a, b) => fav.includes(b.id) - fav.includes(a.id)); }
   pintarLista(L.slice(0, 40), qn);
   verTodos = false;
-  if (L.length) elegir((sel && L.find(x => x.id === sel.id)) || L[0]);
+  const qCambio = ultQ !== qn + '|' + filtroCat; ultQ = qn + '|' + filtroCat;
+  if (L.length) elegir((!qCambio && sel && L.find(x => x.id === sel.id)) || L[0]);
   if (!L.length) { sel = null; $('det').innerHTML = ''; }
 }
 function cuentasResumen(o) { return o.a.filter(a => !a.d).map(a => a.l.map(x => cuentaVista(x[0])[0]).filter((c, i, z) => z.indexOf(c) === i).join(' · ')).join('  →  '); }
@@ -2325,29 +2422,116 @@ function pintarLista(L, qn) {
   window._L = L;
 }
 $('res').addEventListener('click', e => { const b = e.target.closest('[data-op]'); if (b) { elegir(window._L.find(o => o.id === b.dataset.op)); if (matchMedia('(max-width:1100px)').matches) $('det').scrollIntoView({behavior: 'smooth', block: 'start'}); return; } if (e.target.closest('[data-act=armar]')) armarConClaude(); if (e.target.closest('[data-act=mas]')) { verTodos = true; pintarLista(window._L, norm($('q').value)); } });
-function elegir(o) { sel = o; document.querySelectorAll('#res .it').forEach(b => b.setAttribute('aria-current', b.dataset.op === o.id)); pintarDet(); }
+function elegir(o) { if (!sel || sel.id !== o.id) variInicial(o); sel = o; document.querySelectorAll('#res .it').forEach(b => b.setAttribute('aria-current', b.dataset.op === o.id)); pintarDet(); }
 matchMedia('(max-width:1100px)').addEventListener('change', () => window._L && pintarLista(window._L, norm($('q').value)));
 function m2Label(o) { return o && o.calc === 'vc' ? 'Costo de la mercadería' : o && o.calc === 'cuo' ? 'Interés de la cuota' : ''; }
+/* ===== Variantes: cada operación con todas sus posibilidades ===== */
+let vari = {};
+function varsDe(o) {
+  if (!o || o.ia) return [];
+  const id = o.id, fam = o.fam, V = [];
+  const esCompra = fam ? true : /^cm-(cred|cont|bol|mp|env)$|^af-(comp|soft)$/.test(id);
+  const sinComp = id === 'cm-bol';
+  const esServ = fam ? (fam.c.startsWith('63') || fam.c === '638') : false;
+  const esVenta = /^ve-(cred|serv)$/.test(id);
+  if (o.calc === 'rh') V.push(['rh', 'Retención de 4ta categoría (8%)', [['auto', 'Automática (según el monto)'], ['con', 'Sí: el recibo pasa de S/ 1,500'], ['sin', 'No: el recibo es de S/ 1,500 o menos'], ['susp', 'No: tiene suspensión (formulario 1609)']]]);
+  if (esCompra && !sinComp && !(fam && fam.sinIgv) && id !== 'af-soft') V.push(['comp', 'Comprobante', [['factura', 'Factura (con crédito fiscal)'], ['boleta', 'Boleta (el IGV va al costo)']]]);
+  if (esCompra || o.calc === 'rh') V.push(['pago', 'Forma de pago', [['credito', 'Al crédito (se paga después)'], ['caja', 'Al contado en efectivo (101)'], ['banco', 'Al contado por banco (1041)']]]);
+  if (esCompra && vari.pago && vari.pago !== 'credito' && vari.comp !== 'boleta') V.push(['agret', '¿Tu empresa es agente de retención?', [['no', 'No'], ['si', 'Sí: retienes 3% si pasa de S/ 700']]]);
+  if (esServ && vari.comp !== 'boleta') V.push(['detc', '¿El servicio está sujeto a detracción?', [['no', 'No'], ['si', 'Sí: depositas 12% en el Banco de la Nación (si pasa de S/ 700)']]]);
+  if (esVenta) { V.push(['cobro', 'Forma de cobro', [['credito', 'Al crédito (cobras después)'], ['caja', 'Al contado en efectivo (101)'], ['banco', 'Al contado por banco (1041)']]]);
+    if (vari.cobro && vari.cobro !== 'credito') V.push(['cret', '¿El cliente es agente de retención?', [['no', 'No'], ['si', 'Sí: te retiene 3% si pasa de S/ 700']]]);
+    if (id === 've-serv' && vari.cobro && vari.cobro !== 'credito') V.push(['cdet', '¿El servicio está sujeto a detracción?', [['no', 'No'], ['si', 'Sí: el cliente deposita 12% en tu cuenta del Banco de la Nación']]]); }
+  return V;
+}
+function variInicial(o) {
+  const qn = norm($('q').value); vari = {};
+  vari.pago = /\b(efectivo|caja)\b/.test(qn) ? 'caja' : /\b(contado|transferencia|yape|plin|banco)\b/.test(qn) || o.a.some(a => a.t === 'Pago') ? 'banco' : 'credito';
+  vari.comp = /\bboleta\b/.test(qn) || o.id === 'cm-bol' ? 'boleta' : 'factura';
+  vari.cobro = /\b(efectivo|caja)\b/.test(qn) ? 'caja' : /\b(contado|transferencia|banco)\b/.test(qn) ? 'banco' : 'credito';
+  vari.rh = 'auto'; vari.agret = 'no'; vari.detc = /\bdetraccion\b/.test(qn) ? 'si' : 'no'; vari.cret = /\bretencion\b/.test(qn) ? 'si' : 'no'; vari.cdet = /\bdetraccion\b/.test(qn) ? 'si' : 'no';
+}
+// devuelve el asiento ya ajustado a las variantes y los montos extra
+function aplicarVari(o, M, m) {
+  const V = varsDe(o).map(x => x[0]); if (!V.length) return {o, notas: []};
+  const notas = [], cl = JSON.parse(JSON.stringify(o.a));
+  let a = cl;
+  // retención de 4ta
+  if (V.includes('rh')) {
+    const modo = vari.rh === 'auto' ? (m > 0 ? (m > 1500 ? 'con' : 'sin') : 'con') : vari.rh;
+    if (modo !== 'con') { M.ret = 0; M.net = M.bru; a = a.map(x => ({...x, l: x.l.filter(l => l[2] !== 'ret')})).filter(x => x.l.length > 1); }
+    else if (m > 0) { M.ret = r2(m * 0.08); M.net = r2(m - M.ret); }
+    notas.push(modo === 'con' ? (vari.rh === 'auto' && !(m > 0) ? 'Escribe el monto: si el recibo pasa de S/ 1,500 se retiene 8%; si no, la retención desaparece sola.' : 'Se retiene 8% de renta de cuarta porque el recibo pasa de S/ 1,500.') : modo === 'sin' ? 'Sin retención: el recibo no pasa de S/ 1,500, así que pagas el total.' : 'Sin retención: el profesional tiene constancia de suspensión de 4ta categoría (formulario 1609).');
+  }
+  // boleta: el IGV va al costo
+  if (V.includes('comp') && vari.comp === 'boleta') {
+    a = a.map(x => ({...x, l: x.l.filter(l => !(l[0] === '40111' && l[2] === 'igv')).map(l => l[2] === 'base' ? [l[0], l[1], 'tot', l[3] + (l[1] === 'D' && !x.d ? ' Con boleta no hay crédito fiscal: todo el importe va a esta cuenta.' : '')] : l)}));
+  }
+  // forma de pago (compras) o cobro (ventas)
+  const pasivo = (() => { for (const x of a) if (!x.d) for (const l of x.l) if (l[1] === 'H' && /^(42|424|4654|4655|46)/.test(l[0])) return l; return null; })();
+  if (V.includes('pago') && pasivo) {
+    a = a.filter(x => x.t !== 'Pago');
+    if (vari.pago !== 'credito') {
+      const caja = vari.pago === 'caja' ? '101' : '1041', k = pasivo[2], tot = montoDe(M, k) || 0;
+      const l = [[pasivo[0], 'D', k, 'Se cancela la deuda en el momento.']];
+      let resto = k;
+      if (vari.agret === 'si' && V.includes('agret')) {
+        if (m > 0 && tot <= 700) notas.push('Como el total no pasa de S/ 700, no corresponde retener el 3%.');
+        else { M.r3 = r2(tot * 0.03); M.n3 = r2(tot - M.r3); l.push(['40114', 'H', 'r3', 'Como agente de retención, retienes 3% del total y lo pagas a SUNAT (PDT 626).']); resto = 'n3'; }
+      }
+      if (vari.detc === 'si' && V.includes('detc')) {
+        if (m > 0 && tot <= 700) notas.push('Como el total no pasa de S/ 700, no hay detracción.');
+        else { M.dt = Math.round(tot * 0.12); M.nd = r2(tot - M.dt); l.push(['1041', 'H', 'dt', 'La detracción (12%) la depositas en la cuenta del proveedor en el Banco de la Nación.']); resto = resto === 'n3' ? (M.nd = r2(M.n3 - M.dt), 'nd') : 'nd'; }
+      }
+      l.push([caja, 'H', resto, caja === '101' ? 'Sale el efectivo de caja.' : 'Sale el dinero de la cuenta corriente.']);
+      a.push({t: 'Pago', l});
+    } else if (vari.detc === 'si' && V.includes('detc')) {
+      if (!(m > 0) || montoDe(M, pasivo[2]) > 700) { M.dt = Math.round((M.tot || 0) * 0.12); a.push({t: 'Depósito de la detracción', l: [[pasivo[0], 'D', 'dt', 'Pagas parte de la deuda depositando la detracción.'], ['1041', 'H', 'dt', 'Depósito del 12% en la cuenta del proveedor en el Banco de la Nación.']]}); notas.push('El resto de la factura (total − detracción) se paga después.'); }
+    }
+  }
+  if (V.includes('cobro')) {
+    a = a.filter(x => x.t !== 'Cobro');
+    if (vari.cobro !== 'credito') {
+      const caja = vari.cobro === 'caja' ? '101' : '1041', l = [];
+      let neto = 'tot';
+      if (vari.cret === 'si') { if (m > 0 && M.tot <= 700) notas.push('Como el total no pasa de S/ 700, el cliente no te retiene.'); else { M.r3 = r2(M.tot * 0.03); M.n3 = r2(M.tot - M.r3); l.push(['40114', 'D', 'r3', 'El cliente te retiene 3%: es IGV que ya pagaste (casilla 179 del PDT 621).']); neto = 'n3'; } }
+      if (vari.cdet === 'si' && V.includes('cdet')) { if (m > 0 && M.tot <= 700) notas.push('Como el total no pasa de S/ 700, no hay detracción.'); else { M.dt = Math.round(M.tot * 0.12); l.push(['1072', 'D', 'dt', 'El cliente deposita la detracción en tu cuenta del Banco de la Nación.']); M.nd = r2((neto === 'n3' ? M.n3 : M.tot) - M.dt); neto = 'nd'; } }
+      l.unshift([caja, 'D', neto, caja === '101' ? 'Entra el efectivo a caja.' : 'Entra el dinero a la cuenta corriente.']);
+      l.push(['1212', 'H', 'tot', 'El cliente cancela la factura.']);
+      a.push({t: 'Cobro', l});
+    }
+  }
+  return {o: {...o, a, calc: V.includes('comp') && vari.comp === 'boleta' ? 's' : o.calc}, notas};
+}
+function pintarVari(o) {
+  const V = varsDe(o);
+  return V.length ? `<div class="card vari"><h3 style="margin:0 0 6px;font-size:.92rem">Elige tu caso</h3>${V.map(([k, t, ops]) => `<label class="field"><span>${esc(t)}</span><select data-vari="${k}">${ops.map(([v, l]) => `<option value="${v}" ${vari[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`).join('')}</div>` : '';
+}
 function pintarDet() {
-  const o = sel; if (!o) return;
-  const lbl = m2Label(o); $('m2w').hidden = !lbl || !ajustes.mon; $('m2l').textContent = lbl;
-  const m = parseNum($('monto').value), M = calcMontos(o.calc, m || 0, parseNum($('monto2').value)), con = o.ia ? ajustes.mon : ajustes.mon && m > 0;
+  const o0 = sel; if (!o0) return;
+  const lbl = m2Label(o0); $('m2w').hidden = !lbl || !ajustes.mon; $('m2l').textContent = lbl;
+  const m = parseNum($('monto').value), M = calcMontos(o0.calc, m || 0, parseNum($('monto2').value)), con = o0.ia ? ajustes.mon : ajustes.mon && m > 0;
+  const {o, notas} = aplicarVari(o0, M, m);
+  if (o.calc === 's' && o0.calc === 'g') { M.base = null; }
   const mv = k => o.ia ? (k.startsWith('v') ? +k.slice(1) : null) : montoDe(M, k);
-  const fav = LS.get('fav', []).includes(o.id);
-  const asientos = o.a.filter(a => ajustes.des || !a.d);
+  const fav = LS.get('fav', []).includes(o0.id);
+  const asientos = o.a.filter(a => ajustes.des || !a.d).map(a => ({...a, l: con ? a.l.filter(([, , k]) => { const v = mv(k); return v == null || v !== 0; }) : a.l})).filter(a => a.l.length > 1);
+  window._asView = asientos; window._M = M; window._con = con;
   const tabla = a => { let d = 0, h = 0; const rows = a.l.map(([c, s, k]) => { const v = con ? mv(k) : null; if (v != null) s === 'D' ? d += v : h += v; const [cc, nn] = cuentaVista(c); const am = v != null ? `<span class="amt">${nf(v)}</span>` : (con && k === 'na' ? '<span class="amt">según el caso</span>' : '');
-      return `<tr><td class="cod">${esc(cc)}</td><td>${esc(nn)}</td><td class="c">${s === 'D' ? `<span class="x" aria-label="Debe">X</span>${am}` : ''}</td><td class="c">${s === 'H' ? `<span class="x h" aria-label="Haber">X</span>${am}` : ''}</td></tr>`; }).join('');
+      return `<tr><td class="cod"><button class="codb" data-cta="${esc(c)}" title="Ver la cuenta">${esc(cc)}</button></td><td>${esc(nn)}</td><td class="c">${s === 'D' ? `<span class="x" aria-label="Debe">X</span>${am}` : ''}</td><td class="c">${s === 'H' ? `<span class="x h" aria-label="Haber">X</span>${am}` : ''}</td></tr>`; }).join('');
     return `<div class="as ${a.d ? 'dest' : ''}"><h3>${esc(a.t)}</h3><div class="tw"><table><thead><tr><th>Cuenta</th><th>Denominación</th><th class="c">Debe</th><th class="c">Haber</th></tr></thead><tbody>${rows}${con && (d || h) ? `<tr class="tot"><td></td><td>Totales</td><td class="c"><span class="amt">${nf(d)}</span></td><td class="c"><span class="amt">${nf(h)}</span></td></tr>` : ''}</tbody></table></div></div>`; };
   const whys = []; asientos.forEach(a => a.l.forEach(([c, s, , w]) => { const k = cuentaVista(c)[0] + s; if (w && !whys.some(x => x.k === k)) whys.push({k, c: cuentaVista(c)[0], s, w}); }));
-  const notaM = o.ia ? '' : con ? [o.calc === 'rh' && M.ret === 0 ? 'Como el recibo no pasa de S/ 1,500, no se retiene el 8%.' : '', o.calc === 'vc' && !parseNum($('monto2').value) ? 'Costo estimado al 70% de la venta: escribe el costo real para que sea exacto.' : '', o.calc === 'cuo' && !parseNum($('monto2').value) ? 'Interés estimado al 10% de la cuota: escribe el interés real.' : '', o.calc === 'det' ? 'Detracción del 12% redondeada a soles (cambia el % según el tipo de servicio).' : ''].filter(Boolean).join(' ') : (ajustes.mon ? 'Escribe el importe para ver los montos.' : '');
-  $('det').innerHTML = `${o.ia ? '<p class="note" style="margin:0"><span class="tag fam">Claude</span> Este asiento lo armó Claude: revísalo antes de usarlo.</p>' : ''}<div><h2>${esc(o.t)}</h2><p class="sub">${esc(o.sub || o.cat)}${con && M.base != null ? ` · Base ${nf(M.base)} + IGV ${nf(M.igv)} = ${nf(M.tot)}` : ''}</p>${notaM ? `<p class="note" style="margin:4px 0 0">${esc(notaM)}</p>` : ''}</div>
+  const notaM = o.ia ? '' : [...notas, con ? [o.calc === 'vc' && !parseNum($('monto2').value) ? 'Costo estimado al 70% de la venta: escribe el costo real para que sea exacto.' : '', o.calc === 'cuo' && !parseNum($('monto2').value) ? 'Interés estimado al 10% de la cuota: escribe el interés real.' : '', o.calc === 'det' ? 'Detracción del 12% redondeada a soles (cambia el % según el tipo de servicio).' : ''].filter(Boolean).join(' ') : (ajustes.mon ? 'Escribe el importe para ver los montos.' : '')].filter(Boolean).join(' ');
+  $('det').innerHTML = `${o.ia ? '<p class="note" style="margin:0"><span class="tag fam">Claude</span> Este asiento lo armó Claude: revísalo antes de usarlo.</p>' : ''}<div><h2>${esc(o0.t)}</h2><p class="sub">${esc(o0.sub || o0.cat)}${con && M.base != null ? ` · Base ${nf(M.base)} + IGV ${nf(M.igv)} = ${nf(M.tot)}` : ''}</p>${notaM ? `<p class="note nota">${esc(notaM)}</p>` : ''}</div>
+    ${pintarVari(o0)}
     ${asientos.map(tabla).join('')}
-    ${ajustes.why ? `<div class="card"><h3 style="margin:0 0 8px;font-size:.95rem">¿Por qué?</h3><div class="why">${whys.map(x => `<p><b>${esc(x.c)} al ${x.s === 'D' ? 'Debe' : 'Haber'}:</b> ${esc(x.w)}</p>`).join('')}</div></div>` : ''}
+    ${ajustes.why ? `<details class="card wcard" open><summary>¿Por qué?</summary><div class="why">${whys.map(x => `<p><b>${esc(x.c)} al ${x.s === 'D' ? 'Debe' : 'Haber'}:</b> ${esc(x.w)}</p>`).join('')}</div></details>` : ''}
     <div class="acts"><button class="btn2" data-act="fav">${fav ? '★ Quitar de favoritos' : '☆ Favorito'}</button><button class="btn2" data-act="copiar">Copiar asiento</button><button class="btn" data-act="duda">Tengo una duda sobre este asiento</button></div>`;
 }
+$('det').addEventListener('change', e => { const s = e.target.closest('[data-vari]'); if (!s) return; vari[s.dataset.vari] = s.value; pintarDet(); });
 function textoAsiento(o) {
-  const m = parseNum($('monto').value), M = calcMontos(o.calc, m, parseNum($('monto2').value));
-  return o.t + (m ? ` (S/ ${nf(m)})` : '') + '\n' + o.a.filter(a => ajustes.des || !a.d).map(a => a.t + ':\n' + a.l.map(([c, s, k]) => { const [cc, nn] = cuentaVista(c); const v = o.ia ? (k.startsWith('v') ? +k.slice(1) : null) : m ? montoDe(M, k) : null; return `  ${cc} ${nn} — ${s === 'D' ? 'Debe' : 'Haber'}${v != null ? ' ' + nf(v) : ''}`; }).join('\n')).join('\n');
+  const m = parseNum($('monto').value), M = window._M || {}, con = window._con;
+  return o.t + (m ? ` (S/ ${nf(m)})` : '') + '\n' + (window._asView || []).map(a => a.t + ':\n' + a.l.map(([c, s, k]) => { const [cc, nn] = cuentaVista(c); const v = !con ? null : o.ia ? (k.startsWith('v') ? +k.slice(1) : null) : montoDe(M, k); return `  ${cc} ${nn} — ${s === 'D' ? 'Debe' : 'Haber'}${v != null ? ' ' + nf(v) : ''}`; }).join('\n')).join('\n');
 }
 $('det').addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b || !sel) return;
@@ -2355,8 +2539,8 @@ $('det').addEventListener('click', async e => {
   if (b.dataset.act === 'copiar') { const t = textoAsiento(sel); try { await navigator.clipboard.writeText(t); toast('Asiento copiado'); } catch { $('cin').value = t; ir('consultas'); toast('Copiado en Consultas'); } }
   if (b.dataset.act === 'duda') { $('cin').value = 'Tengo una duda sobre este asiento:\n' + textoAsiento(sel) + '\n\nMi duda: '; ir('consultas'); $('cin').focus(); }
 });
-$('cats').innerHTML = ['Todas', ...CATS].map((c, i) => `<button class="chip" data-cat="${i ? esc(c) : ''}" aria-pressed="${i === 0}">${esc(c)}</button>`).join('');
-$('cats').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (!b) return; filtroCat = b.dataset.cat; document.querySelectorAll('#cats .chip').forEach(x => x.setAttribute('aria-pressed', x === b)); buscar(); });
+$('catsel').innerHTML = ['Todas las operaciones', ...CATS].map((c, i) => `<option value="${i ? esc(c) : ''}">${esc(c)}</option>`).join('');
+$('catsel').addEventListener('change', () => { filtroCat = $('catsel').value; buscar(); });
 let tq; $('q').addEventListener('input', () => { clearTimeout(tq); tq = setTimeout(buscar, 120); });
 ['monto', 'monto2'].forEach(id => { $(id).addEventListener('input', pintarDet); $(id).addEventListener('blur', () => { const v = parseNum($(id).value); if (v) $(id).value = nf(v); }); });
 
@@ -2398,8 +2582,34 @@ function buscarCuentas() {
   const cr = dig ? [...Array(raw.length)].map((_, i) => raw.slice(0, i + 1)).filter(c => PM[c]) : [];
   $('crumb').innerHTML = cr.map(c => `<button data-c="${c}"><code>${c}</code> ${esc(PM[c])}</button>`).join('');
 }
-$('cq').addEventListener('input', buscarCuentas);
-document.addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b || seccion !== 'cuentas') return; $('cq').value = b.dataset.c; buscarCuentas(); window.scrollTo({top: 0, behavior: 'smooth'}); });
+$('cq').addEventListener('input', () => { buscarCuentas(); pintarCuenta(); });
+function usosDe(code) {
+  const out = [];
+  const ver = (o, a, l) => { const L = l[0]; if (L === code || L.startsWith(code) || (code.startsWith(L) && L.length >= 3)) out.push({o, a, l}); };
+  OPS.forEach(o => o.a.forEach(a => a.l.forEach(l => ver(o, a, l))));
+  FAM.forEach(f => { if (f.c === code || f.c.startsWith(code) || (code.startsWith(f.c) && f.c.length >= 3)) out.push({fam: f, l: [f.c, 'D', '', f.why]}); (f.dest || []).forEach((c, i) => { if (c === code || c.startsWith(code)) out.push({fam: f, l: [c, i ? 'H' : 'D', '', 'Destino de la compra de ' + f.n.toLowerCase() + '.']}); }); });
+  const vistos = new Set(); return out.filter(x => { const k = (x.o ? x.o.id : 'f' + x.fam.n) + x.l[1]; if (vistos.has(k)) return false; vistos.add(k); return true; });
+}
+function pintarCuenta() {
+  const c = $('cq').value.trim();
+  if (!/^\d+$/.test(c) || !PM[c]) { $('cdet').innerHTML = ''; return; }
+  const hijos = PCGE.filter(a => a.c.length === c.length + 1 && a.c.startsWith(c)).length || PCGE.filter(a => a.c.startsWith(c) && a.c !== c).length;
+  const k2 = c.slice(0, 2), d = DIN[k2], nat = NAT[c[0]] || ['', ''], us = usosDe(c);
+  const ruta = [...Array(c.length)].map((_, i) => c.slice(0, i + 1)).filter(x => PM[x] && x !== c);
+  $('cdet').innerHTML = `<div class="card cdcard">
+    <div class="cdh"><code>${c}</code><b>${esc(PM[c])}</b></div><p class="ruta">${NIV[Math.min(c.length, 5)]}${ruta.length ? ' de ' + ruta.map(x => `<span>${x} ${esc(PM[x].charAt(0) + PM[x].slice(1).toLowerCase())}</span>`).join(' › ') : ''}</p>
+    <p class="note" style="margin:8px 0">${hijos ? `Tiene cuentas más detalladas debajo: toca una para bajar.` : `<b>Es una cuenta final:</b> aquí ya no se puede bajar más.`} · ${esc(nat[0])}${c.length > 1 ? ` · naturaleza <b>${esc(nat[1])}</b>` : ''}</p>
+    ${d ? `<div class="din"><p><b>¿Para qué sirve?</b> ${esc(d[0])}</p><p><span class="x">D</span> <b>Va al Debe cuando:</b> ${esc(d[1])}</p><p><span class="x h">H</span> <b>Va al Haber cuando:</b> ${esc(d[2])}</p></div>` : ''}
+    ${us.length ? `<details class="usos" ${hijos ? '' : 'open'}><summary>Se usa en ${us.length} asiento${us.length > 1 ? 's' : ''} de la app</summary><div class="list" style="margin-top:8px">${us.slice(0, 30).map(x => `<button class="it" data-irop="${esc(x.o ? x.o.id : 'fam:' + x.fam.n)}" data-q="${esc(x.o ? x.o.t : 'compra de ' + x.fam.n.toLowerCase())}"><b>${esc(x.o ? x.o.t : 'Compra o pago de ' + x.fam.n.toLowerCase())}</b><small><span class="x ${x.l[1] === 'H' ? 'h' : ''}" style="width:18px;height:18px;font-size:.7rem">${x.l[1]}</span> ${esc(x.l[0])} al ${x.l[1] === 'D' ? 'Debe' : 'Haber'}: ${esc(x.l[3] || '')}</small></button>`).join('')}</div></details>` : ''}
+    <button class="btn2" data-act="ctaduda" style="margin-top:10px">Preguntar a Claude cuándo se usa la ${c}</button>
+  </div>`;
+}
+document.addEventListener('click', e => {
+  const cta = e.target.closest('[data-cta]'); if (cta) { $('cq').value = cta.dataset.cta; ir('cuentas'); buscarCuentas(); pintarCuenta(); return; }
+  const op = e.target.closest('[data-irop]'); if (op && seccion === 'cuentas') { const id = op.dataset.irop; $('q').value = op.dataset.q; filtroCat = ''; $('catsel').value = ''; ir('asientos'); buscar(); const o = (window._L || []).find(x => x.id === id) || OPS.find(x => x.id === id); if (o) elegir(o); return; }
+  if (e.target.closest('[data-act=ctaduda]')) { const c = $('cq').value.trim(); $('cin').value = `¿Cuándo se usa la cuenta ${c} ${PM[c] || ''} del PCGE 2019? Dame 2 ejemplos de asientos.`; ir('consultas'); enviar(); return; }
+  const b = e.target.closest('[data-c]'); if (!b || seccion !== 'cuentas') return; $('cq').value = b.dataset.c; buscarCuentas(); pintarCuenta(); window.scrollTo({top: 0, behavior: 'smooth'});
+});
 
 /* ===== Consultas con Claude ===== */
 const REGLAS = `Eres un contador público colegiado peruano y profesor. Respondes en español de Perú, claro y directo, con números concretos. Usas el Plan Contable General Empresarial (PCGE 2019, MEF), normas de SUNAT (IGV 18%, renta de 3ra, 4ta y 5ta categoría, detracciones, retenciones, percepciones, PDT 621, PLAME) y NIIF cuando aplique.
@@ -2407,7 +2617,7 @@ Si te pasan un asiento, revísalo cuenta por cuenta: di si está bien o mal, por
 Si una norma o tasa puede haber cambiado, dilo. Sé breve: máximo unas 250 palabras salvo que pidan más detalle.`;
 let turnos = [], ctl = null;
 const SUG = ['¿La compra de útiles de limpieza va a la 656 o a la 6032?', '¿Cuándo se retiene el 8% en un recibo por honorarios?', '¿Cómo registro una compra de mercadería con percepción?', '¿Qué diferencia hay entre la 4212 y la 4654?'];
-$('sug').innerHTML = SUG.map(s => `<button class="chip" data-sug="${esc(s)}">${esc(s)}</button>`).join('');
+$('sug').innerHTML = SUG.map(s => `<button class="it" data-sug="${esc(s)}">${esc(s)}</button>`).join('');
 $('sug').addEventListener('click', e => { const b = e.target.closest('[data-sug]'); if (b) { $('cin').value = b.dataset.sug; enviar(); } });
 function md(t) {
   const lines = esc(t).split('\n'); let out = '', i = 0;
@@ -2652,6 +2862,7 @@ function screenFx(to, src, force) {
 
 
 aplicarTema(); pintarAjustes(); buscarCuentas();
+if (matchMedia('(max-width:820px)').matches) document.querySelectorAll('.aj').forEach(d => d.open = false);
 $('q').value = 'compra de artículos de limpieza al contado'; $('monto').value = '236.00';
 buscar();
 ir(TITULOS[location.hash.slice(1)] ? location.hash.slice(1) : 'asientos', true);
