@@ -236,11 +236,11 @@ details[open]>summary::after{transform:rotate(180deg)}
           <label class="tg"><span>Explicar cada cuenta<small>Muestra el ¿Por qué?</small></span><input type="checkbox" id="oWhy"></label>
           <div class="tg"><span>Nivel de la cuenta<small>Divisionaria completa o solo la cuenta (2 dígitos)</small></span><div class="seg" id="nivel" style="min-width:150px"></div></div>
         </details>
-        <details class="card aj" id="ajIA" style="grid-column:1/-1" open><summary>Respuestas completas con internet (Claude)</summary>
+        <details class="card aj" id="ajIA" style="grid-column:1/-1" open><summary>Respuestas completas con internet (gratis)</summary>
           <p class="note" id="iaEst" style="margin:8px 0"></p>
-          <div class="mrow"><input id="iaKey" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:inherit;font:inherit" type="password" autocomplete="off" spellcheck="false" placeholder="Pega aquí tu clave (empieza con sk-ant-…)"></div>
+          <div class="mrow"><input id="iaKey" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:inherit;font:inherit" type="password" autocomplete="off" spellcheck="false" placeholder="Pega aquí tu clave (AIza… de Gemini o sk-ant-… de Claude)"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn" id="iaSave">Guardar y probar</button><button class="btn2" id="iaDel">Quitar clave</button></div>
-          <p class="note" style="margin-top:8px">Con la clave, Consultas y «Pedirle a Claude» responden <b>cualquier pregunta aquí mismo</b>. La clave se guarda solo en este celular. Se saca en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--brand);font-weight:700">console.anthropic.com</a> (cobro por uso, centavos por pregunta).</p>
+          <div class="note" style="margin-top:10px"><p style="margin:0 0 6px"><b>Gratis (Gemini de Google):</b></p><ol style="margin:0 0 8px;padding-left:20px"><li>Entra a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--brand);font-weight:700">aistudio.google.com/apikey</a> con tu Gmail.</li><li>Toca <b>Create API key</b> (no pide tarjeta).</li><li>Copia la clave (empieza con <b>AIza</b>), pégala arriba y toca <b>Guardar y probar</b>.</li></ol><p style="margin:0">Con la clave, Consultas y «Pedirle a Claude» (Asientos) responden <b>cualquier pregunta aquí mismo</b>. Se guarda solo en este celular. También acepta una clave de Claude (sk-ant-…, de pago).</p></div>
         </details>
         <details class="card aj" style="grid-column:1/-1"><summary>Transición entre pantallas</summary><div class="trx" id="trx" style="margin-top:10px"></div></details>
       </div>
@@ -2739,7 +2739,7 @@ function pintarDet() {
     return `<div class="as ${a.d ? 'dest' : ''}"><h3>${esc(a.t)}</h3><div class="tw"><table><thead><tr><th>Cuenta</th><th>Denominación</th><th class="c">Debe</th><th class="c">Haber</th></tr></thead><tbody>${rows}${con && (d || h) ? `<tr class="tot"><td></td><td>Totales</td><td class="c"><span class="amt">${nf(d)}</span></td><td class="c"><span class="amt">${nf(h)}</span></td></tr>` : ''}</tbody></table></div></div>`; };
   const whys = []; asientos.forEach(a => a.l.forEach(([c, s, , w]) => { const k = cuentaVista(c)[0] + s; if (w && !whys.some(x => x.k === k)) whys.push({k, c: cuentaVista(c)[0], s, w}); }));
   const notaM = o.ia ? '' : [...notas, con ? [o.calc === 'vc' && !parseNum($('monto2').value) ? 'Costo estimado al 70% de la venta: escribe el costo real para que sea exacto.' : '', o.calc === 'cuo' && !parseNum($('monto2').value) ? 'Interés estimado al 10% de la cuota: escribe el interés real.' : '', o.calc === 'det' ? 'Detracción del 12% redondeada a soles (cambia el % según el tipo de servicio).' : ''].filter(Boolean).join(' ') : (ajustes.mon ? 'Escribe el importe para ver los montos.' : '')].filter(Boolean).join(' ');
-  $('det').innerHTML = `${o.ia ? '<p class="note" style="margin:0"><span class="tag fam">Claude</span> Este asiento lo armó Claude: revísalo antes de usarlo.</p>' : ''}<div><h2>${esc(tituloVar(o0))}</h2><p class="sub">${esc(o0.sub || o0.cat)}${con && M.base != null ? ` · Base ${nf(M.base)} + IGV ${nf(M.igv)} = ${nf(M.tot)}` : ''}</p>${notaM ? `<p class="note nota">${esc(notaM)}</p>` : ''}</div>
+  $('det').innerHTML = `${o.ia ? `<p class="note" style="margin:0"><span class="tag fam">${iaNombre()}</span> Este asiento lo armó ${iaNombre()}: revísalo antes de usarlo.</p>` : ''}<div><h2>${esc(tituloVar(o0))}</h2><p class="sub">${esc(o0.sub || o0.cat)}${con && M.base != null ? ` · Base ${nf(M.base)} + IGV ${nf(M.igv)} = ${nf(M.tot)}` : ''}</p>${notaM ? `<p class="note nota">${esc(notaM)}</p>` : ''}</div>
     ${pintarVari(o0)}
     ${asientos.map(tabla).join('')}
     ${ajustes.why ? `<details class="card wcard" open><summary>¿Por qué?</summary><div class="why">${whys.map(x => `<p><b>${esc(x.c)} al ${x.s === 'D' ? 'Debe' : 'Haber'}:</b> ${esc(x.w)}</p>`).join('')}</div></details>` : ''}
@@ -2769,7 +2769,29 @@ async function getSample() { if (sampleFn) return sampleFn; try { sampleFn = win
 const IA_MODEL = 'claude-sonnet-5-5';
 const iaKey = () => { try { return localStorage.getItem('pcge-iakey') || ''; } catch { return ''; } };
 function iaErr(st, m) { return {code: st === 401 ? 'badkey' : st === 429 ? 'rate_limited' : st === 400 && /credit/i.test(m) ? 'nocredit' : 'net', msg: m}; }
-async function iaPedir(messages, {system = '', signal, onText, max = 1500} = {}) {
+const esGemini = () => /^AIza/.test(iaKey());
+const iaNombre = () => sampleFn ? 'Claude' : esGemini() ? 'Gemini' : 'Claude';
+async function gemPedir(messages, {system = '', signal, onText, max = 1500}, modelo = 'gemini-flash-latest') {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:${onText ? 'streamGenerateContent?alt=sse' : 'generateContent'}`;
+  const body = {contents: messages.map(m => ({role: m.role === 'assistant' ? 'model' : 'user', parts: [{text: m.content}]})), generationConfig: {maxOutputTokens: Math.max(max, 64) * 2}};
+  if (system) body.systemInstruction = {parts: [{text: system}]};
+  const r = await fetch(url, {method: 'POST', signal, headers: {'content-type': 'application/json', 'x-goog-api-key': iaKey()}, body: JSON.stringify(body)});
+  if (r.status === 404 && modelo !== 'gemini-2.5-flash') return gemPedir(messages, {system, signal, onText, max}, 'gemini-2.5-flash');
+  if (!r.ok) { let m = ''; try { m = (await r.json()).error.message; } catch {} throw {code: r.status === 400 && /key/i.test(m) || r.status === 403 ? 'badkey' : r.status === 429 ? 'gemlimit' : 'net', msg: m}; }
+  const txt = j => ((j.candidates || [])[0] || {}).content ? j.candidates[0].content.parts.map(x => x.text || '').join('') : '';
+  if (!onText) return {text: txt(await r.json())};
+  const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '', text = '';
+  try {
+    for (;;) { const {done, value} = await rd.read(); if (done) break; buf += dec.decode(value, {stream: true});
+      let i; while ((i = buf.indexOf('\n')) >= 0) { const ln = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+        if (!ln.startsWith('data:')) continue; let ev; try { ev = JSON.parse(ln.slice(5)); } catch { continue; }
+        const t = txt(ev); if (t) { text += t; onText({text}); } } }
+  } catch (e) { if (e && e.name === 'AbortError') throw {code: 'cancelled', text}; throw {code: 'net', text}; }
+  return {text};
+}
+async function iaPedir(messages, opts = {}) {
+  if (esGemini()) return gemPedir(messages, Object.assign({system: '', max: 1500}, opts));
+  const {system = '', signal, onText, max = 1500} = opts;
   const r = await fetch('https://api.anthropic.com/v1/messages', {method: 'POST', signal, headers: {'content-type': 'application/json', 'x-api-key': iaKey(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'},
     body: JSON.stringify({model: IA_MODEL, max_tokens: max, system, stream: !!onText, messages: messages.map(m => ({role: m.role, content: m.content}))})});
   if (!r.ok) { let m = ''; try { m = (await r.json()).error.message; } catch {} throw iaErr(r.status, m); }
@@ -2791,7 +2813,7 @@ function iaSample() {
   f.json = async prompt => { const {text} = await iaPedir([{role: 'user', content: prompt}], {max: 2500}); const m = text.match(/\{[\s\S]*\}/); if (!m) throw {code: 'invalid_json'}; try { return JSON.parse(m[0]); } catch { throw {code: 'invalid_json'}; } };
   return f;
 }
-const MSG_ERR = {badkey: 'La clave de Claude no es válida. Revísala en Ajustes.', nocredit: 'Tu cuenta de Claude (API) no tiene saldo. Recárgala en console.anthropic.com.', net: 'No hay conexión con Claude. Revisa tu internet.', not_granted: 'No diste permiso para usar Claude en esta página.', sampling_disabled: 'Claude no está disponible para esta cuenta.', rate_limited: 'Demasiadas consultas seguidas. Espera un momento y vuelve a intentar.', session_expired: 'Vuelve a iniciar sesión en Claude.', refused: 'Claude no respondió esa pregunta. Cámbiala un poco.', invalid_json: 'La respuesta no vino en el formato esperado. Intenta otra vez.'};
+const MSG_ERR = {gemlimit: 'Llegaste al límite gratis de Gemini por ahora. Espera un rato (se renueva solo) y vuelve a preguntar.', badkey: 'La clave no es válida. Revísala en Ajustes.', nocredit: 'Tu cuenta de Claude (API) no tiene saldo. Recárgala en console.anthropic.com.', net: 'No hay conexión con Claude. Revisa tu internet.', not_granted: 'No diste permiso para usar Claude en esta página.', sampling_disabled: 'Claude no está disponible para esta cuenta.', rate_limited: 'Demasiadas consultas seguidas. Espera un momento y vuelve a intentar.', session_expired: 'Vuelve a iniciar sesión en Claude.', refused: 'Claude no respondió esa pregunta. Cámbiala un poco.', invalid_json: 'La respuesta no vino en el formato esperado. Intenta otra vez.'};
 async function armarConClaude() {
   const q = $('q').value.trim(); if (!q) return;
   const s = await getSample();
@@ -2806,7 +2828,7 @@ Responde SOLO con JSON con esta forma:
   try {
     const r = await s.json(prompt);
     if (!r || !Array.isArray(r.asientos)) throw {code: 'invalid_json'};
-    const op = {id: 'ia:' + q, cat: 'Respuesta de Claude', t: r.titulo || q, sub: r.nota || 'Asiento armado por Claude: revísalo.', calc: 'na', ia: 1,
+    const op = {id: 'ia:' + q, cat: 'Respuesta de ' + iaNombre(), t: r.titulo || q, sub: r.nota || 'Asiento armado por ' + iaNombre() + ': revísalo.', calc: 'na', ia: 1,
       a: r.asientos.map(a => ({t: a.t || 'Asiento', d: a.destino ? 1 : 0, l: (a.lineas || []).map(x => [String(x.cuenta || '').replace(/\D/g, ''), x.lado === 'H' ? 'H' : 'D', x.monto == null ? 'na' : 'v' + (+x.monto), (x.porque || '') + (PM[String(x.cuenta).replace(/\D/g, '')] ? '' : ' (Ojo: esta cuenta no aparece en el PCGE 2019).')]) }))};
     sel = op; pintarDet();
   } catch (e) { $('det').innerHTML = `<div class="card"><b>No se pudo armar el asiento.</b><p class="note">${esc(MSG_ERR[e && e.code] || 'Hubo un problema de conexión. Intenta otra vez.')}</p></div>`; }
@@ -2877,7 +2899,7 @@ function md(t) {
   return out;
 }
 function pintarChat() { $('chat').innerHTML = turnos.map(t => `<div class="msg ${t.role === 'user' ? 'u' : 'a'}">${t.role === 'user' ? esc(t.content).replace(/\n/g, '<br>') : md(t.content)}</div>`).join(''); }
-const SIN_RESP = 'Esa pregunta necesita a Claude por internet. Activa **Ajustes → Respuestas completas con internet** (pega tu clave una sola vez) y te responderá aquí mismo cualquier pregunta.';
+const SIN_RESP = 'Esa pregunta necesita a Claude por internet. Activa **Ajustes → Respuestas completas con internet** con tu clave gratis de Gemini (una sola vez) y te responderá aquí mismo cualquier pregunta.';
 async function enviar() {
   const txt = $('cin').value.trim(); if (!txt || ctl) return;
   turnos.push({role: 'user', content: txt}); $('cin').value = ''; $('cnote').textContent = ''; micEstado('cin', '');
@@ -2929,8 +2951,8 @@ function pintarAjustes() {
 }
 function pintarIA() {
   const enArt = !!sampleFn; $('ajIA').hidden = enArt; if (enArt) return;
-  const k = iaKey(); $('iaKey').value = ''; $('iaKey').placeholder = k ? 'Clave guardada: ' + k.slice(0, 10) + '…' + k.slice(-4) : 'Pega aquí tu clave (empieza con sk-ant-…)';
-  $('iaEst').innerHTML = k ? '✅ <b>Conectada.</b> Las consultas se responden con Claude cuando hay internet; sin internet responde la app.' : 'Ahora la app responde sola lo que tiene guardado. Para que responda <b>todo</b>, pega tu clave de Claude.';
+  const k = iaKey(); $('iaKey').value = ''; $('iaKey').placeholder = k ? 'Clave guardada: ' + k.slice(0, 10) + '…' + k.slice(-4) : 'Pega aquí tu clave (AIza… de Gemini o sk-ant-… de Claude)';
+  $('iaEst').innerHTML = k ? '✅ <b>Conectada a ' + (esGemini() ? 'Gemini (gratis)' : 'Claude') + '.</b> Con internet responde cualquier pregunta; sin internet responde la app.' : 'Ahora la app responde solo lo que tiene guardado. Para que responda <b>todo gratis</b>, saca tu clave de Gemini (3 pasos abajo).';
 }
 $('iaSave').onclick = async () => {
   const v = $('iaKey').value.trim(); if (!v && !iaKey()) { $('iaEst').textContent = 'Primero pega la clave.'; return; }
