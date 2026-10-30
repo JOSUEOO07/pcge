@@ -236,6 +236,12 @@ details[open]>summary::after{transform:rotate(180deg)}
           <label class="tg"><span>Explicar cada cuenta<small>Muestra el ¿Por qué?</small></span><input type="checkbox" id="oWhy"></label>
           <div class="tg"><span>Nivel de la cuenta<small>Divisionaria completa o solo la cuenta (2 dígitos)</small></span><div class="seg" id="nivel" style="min-width:150px"></div></div>
         </details>
+        <details class="card aj" id="ajIA" style="grid-column:1/-1" open><summary>Respuestas completas con internet (Claude)</summary>
+          <p class="note" id="iaEst" style="margin:8px 0"></p>
+          <div class="mrow"><input id="iaKey" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);color:inherit;font:inherit" type="password" autocomplete="off" spellcheck="false" placeholder="Pega aquí tu clave (empieza con sk-ant-…)"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn" id="iaSave">Guardar y probar</button><button class="btn2" id="iaDel">Quitar clave</button></div>
+          <p class="note" style="margin-top:8px">Con la clave, Consultas y «Pedirle a Claude» responden <b>cualquier pregunta aquí mismo</b>. La clave se guarda solo en este celular. Se saca en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--brand);font-weight:700">console.anthropic.com</a> (cobro por uso, centavos por pregunta).</p>
+        </details>
         <details class="card aj" style="grid-column:1/-1"><summary>Transición entre pantallas</summary><div class="trx" id="trx" style="margin-top:10px"></div></details>
       </div>
     </section>
@@ -2758,12 +2764,38 @@ let tq; $('q').addEventListener('input', () => { clearTimeout(tq); tq = setTimeo
 /* ===== Claude: armar un asiento que no está en la lista ===== */
 let sampleFn = null;
 (async () => { try { sampleFn = window.claude && await window.claude.use('sample'); } catch {} })();
-async function getSample() { if (sampleFn) return sampleFn; try { sampleFn = window.claude && await window.claude.use('sample'); } catch {} return sampleFn; }
-const MSG_ERR = {not_granted: 'No diste permiso para usar Claude en esta página.', sampling_disabled: 'Claude no está disponible para esta cuenta.', rate_limited: 'Demasiadas consultas seguidas. Espera un momento y vuelve a intentar.', session_expired: 'Vuelve a iniciar sesión en Claude.', refused: 'Claude no respondió esa pregunta. Cámbiala un poco.', invalid_json: 'La respuesta no vino en el formato esperado. Intenta otra vez.'};
+async function getSample() { if (sampleFn) return sampleFn; try { sampleFn = window.claude && await window.claude.use('sample'); } catch {} return sampleFn || iaSample(); }
+/* ===== Claude por internet (app instalada, con clave propia) ===== */
+const IA_MODEL = 'claude-sonnet-5-5';
+const iaKey = () => { try { return localStorage.getItem('pcge-iakey') || ''; } catch { return ''; } };
+function iaErr(st, m) { return {code: st === 401 ? 'badkey' : st === 429 ? 'rate_limited' : st === 400 && /credit/i.test(m) ? 'nocredit' : 'net', msg: m}; }
+async function iaPedir(messages, {system = '', signal, onText, max = 1500} = {}) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {method: 'POST', signal, headers: {'content-type': 'application/json', 'x-api-key': iaKey(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'},
+    body: JSON.stringify({model: IA_MODEL, max_tokens: max, system, stream: !!onText, messages: messages.map(m => ({role: m.role, content: m.content}))})});
+  if (!r.ok) { let m = ''; try { m = (await r.json()).error.message; } catch {} throw iaErr(r.status, m); }
+  if (!onText) { const j = await r.json(); return {text: (j.content || []).map(c => c.text || '').join('')}; }
+  const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '', text = '';
+  try {
+    for (;;) { const {done, value} = await rd.read(); if (done) break; buf += dec.decode(value, {stream: true});
+      let i; while ((i = buf.indexOf('\n')) >= 0) { const ln = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+        if (!ln.startsWith('data:')) continue; let ev; try { ev = JSON.parse(ln.slice(5)); } catch { continue; }
+        if (ev.type === 'content_block_delta' && ev.delta && ev.delta.text) { text += ev.delta.text; onText({text}); }
+        if (ev.type === 'error') throw {code: 'net', msg: ev.error && ev.error.message, text}; } }
+  } catch (e) { if (e && e.name === 'AbortError') throw {code: 'cancelled', text}; throw Object.assign({code: 'net'}, e, {text}); }
+  return {text};
+}
+/* misma forma que la función de Claude del artifact: s(msgs, opts) y s.json(prompt) */
+function iaSample() {
+  if (!iaKey() || !navigator.onLine) return null;
+  const f = (msgs, o = {}) => { const sys = msgs[0] && msgs[0].content === REGLAS ? REGLAS : ''; return iaPedir(sys ? msgs.slice(1) : msgs, {system: sys, signal: o.signal, onText: o.onText}); };
+  f.json = async prompt => { const {text} = await iaPedir([{role: 'user', content: prompt}], {max: 2500}); const m = text.match(/\{[\s\S]*\}/); if (!m) throw {code: 'invalid_json'}; try { return JSON.parse(m[0]); } catch { throw {code: 'invalid_json'}; } };
+  return f;
+}
+const MSG_ERR = {badkey: 'La clave de Claude no es válida. Revísala en Ajustes.', nocredit: 'Tu cuenta de Claude (API) no tiene saldo. Recárgala en console.anthropic.com.', net: 'No hay conexión con Claude. Revisa tu internet.', not_granted: 'No diste permiso para usar Claude en esta página.', sampling_disabled: 'Claude no está disponible para esta cuenta.', rate_limited: 'Demasiadas consultas seguidas. Espera un momento y vuelve a intentar.', session_expired: 'Vuelve a iniciar sesión en Claude.', refused: 'Claude no respondió esa pregunta. Cámbiala un poco.', invalid_json: 'La respuesta no vino en el formato esperado. Intenta otra vez.'};
 async function armarConClaude() {
   const q = $('q').value.trim(); if (!q) return;
   const s = await getSample();
-  if (!s) { $('det').innerHTML = `<div class="card"><b>Las consultas con Claude no están disponibles aquí.</b><p class="note">Esta opción funciona en la versión de PCGE dentro de Claude: <a href="https://claude.ai/artifact/GJzvBGznCexAbYrre9wYuE" target="_blank" rel="noopener">abrir PCGE en Claude</a>.</p></div>`; return; }
+  if (!s) { $('det').innerHTML = `<div class="card"><b>Para que Claude arme este asiento, conecta la app a internet.</b><p class="note">Ve a <b>Ajustes → Respuestas completas con internet</b> y pega tu clave. ${navigator.onLine ? '' : 'Ahora estás sin internet.'}</p></div>`; return; }
   $('det').innerHTML = `<div class="card"><b>Armando el asiento…</b><p class="note">Claude está pensando (puede tardar unos segundos).</p></div>`;
   const prompt = `Eres contador público colegiado en Perú. Arma el asiento contable de esta operación usando el PCGE 2019 (MEF) vigente, con cuentas divisionarias de 4 o 5 dígitos cuando existan, IGV 18%, y asientos de destino (clase 9 contra 79, o 2x contra 61x) cuando correspondan.
 Operación: «${q}»${parseNum($('monto').value) ? `. Importe total: S/ ${nf(parseNum($('monto').value))} (si la operación lleva IGV, ese total ya lo incluye)` : ''}.
@@ -2845,7 +2877,7 @@ function md(t) {
   return out;
 }
 function pintarChat() { $('chat').innerHTML = turnos.map(t => `<div class="msg ${t.role === 'user' ? 'u' : 'a'}">${t.role === 'user' ? esc(t.content).replace(/\n/g, '<br>') : md(t.content)}</div>`).join(''); }
-const SIN_RESP = 'Esa pregunta no la puedo resolver sin internet. Toca **Preguntar a Claude**: tu pregunta se copia sola y Claude te la responde completa.';
+const SIN_RESP = 'Esa pregunta necesita a Claude por internet. Activa **Ajustes → Respuestas completas con internet** (pega tu clave una sola vez) y te responderá aquí mismo cualquier pregunta.';
 async function enviar() {
   const txt = $('cin').value.trim(); if (!txt || ctl) return;
   turnos.push({role: 'user', content: txt}); $('cin').value = ''; $('cnote').textContent = ''; micEstado('cin', '');
@@ -2855,8 +2887,8 @@ async function enviar() {
     const r = respuestaLocal(txt, prev);
     turnos.push({role: 'assistant', content: (r || SIN_RESP), local: 1}); pintarChat();
     $('chat').lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
-    $('cnote').innerHTML = (r ? '¿Quieres más detalle? ' : '') + '<button class="btn2" id="aClaude" style="padding:6px 10px">Preguntar a Claude</button> <span>(tu pregunta se copia sola: pégala allá)</span>';
-    $('aClaude').onclick = async () => { try { await navigator.clipboard.writeText(txt); } catch {} window.open(LINK_CLAUDE, '_blank', 'noopener'); };
+    if (!iaKey()) { $('cnote').innerHTML = '<button class="btn2" id="aIA" style="padding:6px 10px">Activar respuestas completas</button> <span>para que responda cualquier pregunta aquí mismo</span>'; $('aIA').onclick = () => { ir('ajustes'); $('ajIA').open = true; $('iaKey').focus(); }; }
+    else $('cnote').textContent = 'Sin internet: respondí con lo que la app tiene guardado. Con conexión te responde Claude completo.';
     return;
   }
   turnos.push({role: 'assistant', content: 'Pensando…'}); pintarChat();
@@ -2895,6 +2927,20 @@ function pintarAjustes() {
   $('oMon').checked = ajustes.mon; $('oDes').checked = ajustes.des; $('oWhy').checked = ajustes.why;
   $('trx').innerHTML = FX_LIST.map(([k, n, d]) => `<button class="trb" data-trx="${k}" aria-pressed="${k === fxType()}"><b>${n}</b><small>${d}</small></button>`).join('');
 }
+function pintarIA() {
+  const enArt = !!sampleFn; $('ajIA').hidden = enArt; if (enArt) return;
+  const k = iaKey(); $('iaKey').value = ''; $('iaKey').placeholder = k ? 'Clave guardada: ' + k.slice(0, 10) + '…' + k.slice(-4) : 'Pega aquí tu clave (empieza con sk-ant-…)';
+  $('iaEst').innerHTML = k ? '✅ <b>Conectada.</b> Las consultas se responden con Claude cuando hay internet; sin internet responde la app.' : 'Ahora la app responde sola lo que tiene guardado. Para que responda <b>todo</b>, pega tu clave de Claude.';
+}
+$('iaSave').onclick = async () => {
+  const v = $('iaKey').value.trim(); if (!v && !iaKey()) { $('iaEst').textContent = 'Primero pega la clave.'; return; }
+  const viejo = iaKey(); if (v) { try { localStorage.setItem('pcge-iakey', v); } catch {} }
+  $('iaEst').textContent = 'Probando la conexión…';
+  try { await iaPedir([{role: 'user', content: 'Responde solo: ok'}], {max: 5}); pintarIA(); $('iaEst').innerHTML = '✅ <b>Funciona.</b> Ya puedes preguntar cualquier cosa en Consultas.'; }
+  catch (e) { if (e.code === 'badkey') { try { viejo ? localStorage.setItem('pcge-iakey', viejo) : localStorage.removeItem('pcge-iakey'); } catch {} } $('iaEst').innerHTML = '❌ ' + esc(MSG_ERR[e.code] || 'No se pudo conectar.'); }
+};
+$('iaDel').onclick = () => { try { localStorage.removeItem('pcge-iakey'); } catch {} pintarIA(); };
+setTimeout(pintarIA, 600);
 document.querySelector('[data-sec=ajustes]').addEventListener('click', e => {
   const t = e.target.closest('[data-fondo],[data-acento],[data-modo],[data-nivel],[data-trx]'); if (!t) return;
   if (t.dataset.fondo) ajustes.fondo = t.dataset.fondo; if (t.dataset.acento) ajustes.acento = t.dataset.acento; if (t.dataset.modo) ajustes.modo = t.dataset.modo; if (t.dataset.nivel) ajustes.nivel = t.dataset.nivel;
