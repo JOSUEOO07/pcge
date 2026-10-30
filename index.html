@@ -2113,7 +2113,7 @@ const OPS = [
   {id: 've-cast', cat: 'Ventas', t: 'Castigo de cuenta incobrable', k: 'castigo incobrable deuda perdida cliente', calc: 's', a: [
     {t: 'El castigo', l: [['1911', 'D', 'tot', 'Se usa la estimación que ya hiciste.'], ['1212', 'H', 'tot', 'Se elimina la deuda del cliente.']]}]},
   // ---------- CAJA Y BANCOS ----------
-  {id: 'cb-cobro', cat: 'Caja y bancos', t: 'Cobranza a cliente', k: 'cobranza cobro cliente deposito pago de cliente', calc: 's', a: [
+  {id: 'cb-cobro', cat: 'Caja y bancos', t: 'Cobro a cliente (cobranza)', k: 'cobranza cobro cliente deposito pago de cliente cliente me paga', calc: 's', a: [
     {t: 'Cobro', l: [['1041', 'D', 'tot', W.ban], ['1212', 'H', 'tot', 'El cliente cancela su deuda.']]}]},
   {id: 'cb-pago', cat: 'Caja y bancos', t: 'Pago a proveedor', k: 'pago proveedor cancelar factura transferencia', calc: 's', a: [PAGO('4212', 'tot', 'Se cancela la deuda con el proveedor.')]},
   {id: 'cb-dep', cat: 'Caja y bancos', t: 'Depósito de efectivo en el banco', k: 'deposito efectivo banco caja a banco', calc: 's', a: [
@@ -2133,7 +2133,7 @@ const OPS = [
   {id: 'cb-dif-', cat: 'Caja y bancos', t: 'Pérdida por diferencia de cambio', k: 'diferencia de cambio perdida dolares tipo de cambio', calc: 's', a: [
     {t: 'Ajuste', l: [['676', 'D', 'tot', 'Gasto por diferencia de cambio.'], ['4212', 'H', 'tot', 'Tu deuda en dólares vale más en soles.']]}, D97('tot')]},
   // ---------- PLANILLA ----------
-  {id: 'pl-onp', cat: 'Planilla', t: 'Planilla de sueldos (trabajador en ONP)', k: 'planilla sueldos remuneraciones onp essalud trabajadores salario', calc: 'pl', a: [
+  {id: 'pl-onp', cat: 'Planilla', t: 'Planilla de sueldos (trabajador en ONP)', k: 'planilla sueldos remuneraciones onp essalud trabajadores salario pago a trabajador pago de sueldo', calc: 'pl', a: [
     {t: 'Planilla', l: [['6211', 'D', 'rem', 'Gasto de personal: sueldos.'], ['6271', 'D', 'ess', 'EsSalud (9%) lo paga la empresa: es gasto.'], ['4031', 'H', 'ess', 'Debes el EsSalud a SUNAT.'], ['4032', 'H', 'onp', 'ONP (13%) se descuenta al trabajador.'], ['4111', 'H', 'net', 'Sueldo neto a pagar al trabajador.']]},
     D94('rem+ess'), PAGO('4111', 'net', 'Pagas el sueldo neto.')]},
   {id: 'pl-afp', cat: 'Planilla', t: 'Planilla de sueldos (trabajador en AFP)', k: 'planilla sueldos afp prima integra profuturo habitat essalud', calc: 'pla', a: [
@@ -2186,7 +2186,7 @@ const OPS = [
   {id: 'af-soft', cat: 'Activo fijo', t: 'Compra de software o licencia', k: 'software programa licencia sistema aplicacion intangible', calc: 'g', a: [
     {t: 'La compra', l: [['3431', 'D', 'base', 'Intangible: programas de computadora.'], ['40111', 'D', 'igv', W.igvc], ['4655', 'H', 'tot', 'Deuda por compra de intangibles.']]}]},
   // ---------- FINANCIAMIENTO ----------
-  {id: 'fi-prest', cat: 'Financiamiento', t: 'Préstamo bancario recibido', k: 'prestamo bancario credito banco financiamiento', calc: 's', a: [
+  {id: 'fi-prest', cat: 'Financiamiento', t: 'Préstamo bancario recibido', k: 'prestamo bancario credito banco financiamiento dinero del banco', calc: 's', a: [
     {t: 'Desembolso', l: [['1041', 'D', 'tot', 'Entra el dinero del préstamo.'], ['4511', 'H', 'tot', 'Deuda con la institución financiera.']]}]},
   {id: 'fi-cuota', cat: 'Financiamiento', t: 'Pago de cuota del préstamo (capital + interés)', k: 'pago cuota prestamo interes amortizacion banco', calc: 'cuo', a: [
     {t: 'Pago de la cuota', l: [['4511', 'D', 'cap', 'Amortización: baja la deuda.'], ['6731', 'D', 'int', 'Los intereses son gasto financiero.'], ['1041', 'H', 'tot', W.sale]]}, D97('int')]},
@@ -2462,35 +2462,54 @@ Asiento mensual: 6841 al Debe / 3952x al Haber (y destino 94 / 791).`},
 - Las facturas de compra deben anotarse en el **Registro de Compras** para usar el crédito fiscal; hay un plazo máximo de **12 periodos** desde su emisión.
 - Hoy se llevan en el **SIRE** de SUNAT, que te propone los registros con los comprobantes electrónicos.`},
 ];
-function respuestaLocal(q) {
-  const qn = norm(q), out = [];
-  // 1) pregunta por una cuenta: "para qué es la 40111", "diferencia entre 4212 y 4654"
+let ultimaOp = null;
+function respuestaLocal(q, previa) {
+  const corta = /^\s*(y|pero|entonces|ahora|y si|y cuando|y con|y en|en cambio)\b/i.test(q) && norm(q).split(' ').length <= 9;
+  // pregunta de seguimiento ("¿y si es al contado?"): misma operación de antes con el nuevo dato
+  if (corta && ultimaOp && /\b(contado|credito|efectivo|caja|banco|boleta|factura|transferencia|cheque|yape|plin)\b/.test(norm(q))) return tablaOp(ultimaOp, norm(q) + ' asiento');
+  if (corta && previa) { const r0 = responder1(previa + ' ' + q); if (r0) return r0; }
+  return responder1(q);
+}
+function tablaOp(op, qn) {
+  ultimaOp = op;
+    const L = op.a.filter(a => !a.d && a.t !== 'Pago' && a.t !== 'Cobro').flatMap(a => a.l);
+    const pas = L.find(l => l[1] === 'H' && /^(42|424|465|46)/.test(l[0])), cli = L.find(l => l[1] === 'D' && /^12/.test(l[0]));
+    if (pas && !/\bcredito\b/.test(qn)) L.push([pas[0], 'D'], [/\b(efectivo|caja)\b/.test(qn) ? '101' : '1041', 'H']);
+    if (cli && !/\bcredito\b/.test(qn) && !op.a.some(a => a.t === 'Cobro' && a.l.some(l => l[0] === '1072'))) L.push([/\b(efectivo|caja)\b/.test(qn) ? '101' : '1041', 'D'], [cli[0], 'H']);
+    if (op.a.some(a => a.t === 'Cobro')) op.a.filter(a => a.t === 'Cobro').forEach(a => a.l.forEach(l => L.push(l)));
+    const dest = op.a.filter(a => a.d).flatMap(a => a.l);
+    return `**Asiento: ${(pas || cli) && !/^cb-|^fi-|^ca-|^pl-/.test(op.id) ? op.t.replace(/\s+al (cr[eé]dito|contado)\b/i, '') + (/\bcredito\b/.test(qn) ? ' al crédito' : (/\b(efectivo|caja)\b/.test(qn) ? ' al contado (efectivo)' : ' al contado (banco)')) : op.t}**
+| Cuenta | Denominación | Debe | Haber |
+|---|---|---|---|
+${L.map(([c, s]) => `| ${c} | ${nombreClaro(c)} | ${s === 'D' ? 'X' : ''} | ${s === 'H' ? 'X' : ''} |`).join('\n')}
+${dest.length ? `\n**Destino:** ${dest.map(([c, s]) => `${c} al ${s === 'D' ? 'Debe' : 'Haber'}`).join(', ')}.` : ''}
+${op.a.flatMap(a => a.l).filter((l, i, z) => l[3] && z.findIndex(x => x[0] === l[0]) === i).slice(0, 4).map(l => `- **${l[0]}:** ${l[3]}`).join('\n')}
+Ábrelo en **Asientos** para ver los montos y elegir tu caso (crédito o contado, factura o boleta, retenciones, detracción).`;
+  }
+function responder1(q) {
+  const qn = norm(q), qc = canon(qn), out = [];
   const cods = [...new Set((qn.match(/\b\d{2,5}\b/g) || []).filter(c => PM[c]))];
-  // 2) preguntas frecuentes por palabras
-  const toks = qn.split(' ').filter(t => t.length > 2 && !STOP.has(t) && !/^(como|cual|cuando|donde|porque|para|que|cuanto|registro|registrar|contabilizo|contabilizar|asiento|cuenta|cuentas|usar|uso|sirve|diferencia|hay|entre)$/.test(t));
-  const fq = FAQ.map(f => { const kk = ' ' + norm(f.k) + ' '; let s = 0; toks.forEach(t => { if (kk.includes(' ' + t + ' ')) s += 3; else if (t.length > 4 && kk.includes(t.slice(0, -1))) s += 1; }); cods.forEach(c => { if (kk.includes(' ' + c + ' ')) s += 4; }); return {f, s}; }).sort((a, b) => b.s - a.s);
-  const pideAsiento = /\b(como (registro|registrar|contabilizo|contabilizar|se registra|se contabiliza|hago el asiento)|asiento de|asiento del|asiento por)\b/.test(qn);
-  if (fq[0] && fq[0].s >= (pideAsiento ? 6 : 3)) out.push(fq[0].f.r);
-  if (!out.length || cods.length) cods.slice(0, 3).forEach(c => {
+  const toks = qc.split(' ').filter(t => t.length > 2 && !STOP.has(t) && !/^(como|cual|cuando|donde|porque|para|que|cuanto|registro|registrar|registraria|contabilizo|contabilizar|contabilizaria|asiento|cuenta|cuentas|usar|uso|sirve|diferencia|hay|entre|pero|seria|hago|hace|hacer|empresa|caso|ejemplo)$/.test(t));
+  const pideAsiento = /\b(como (se )?(registr|contabiliz|hago|seria|va)\w*|asiento|registr\w*|contabiliz\w*|que cuentas?|en que cuenta)/.test(qn);
+  const AMBIG = new Set(['capital', 'legal', 'banco', 'pago', 'dias', 'tasa', 'valor', 'credito', 'cobro', 'venta', 'compra']);
+  const fq = FAQ.map(f => { const kk = ' ' + canon(norm(f.k)) + ' '; let s = 0, hits = []; toks.forEach(t => { if (kk.includes(' ' + t + ' ')) { s += 3; hits.push(t); } else if (t.length > 4 && kk.includes(t.slice(0, -1))) { s += 1; hits.push(t); } }); cods.forEach(c => { if (kk.includes(' ' + c + ' ')) s += 4; }); if (hits.length && hits.every(h => AMBIG.has(h)) && hits.length < 2 && !cods.length) s = 0; return {f, s}; }).sort((a, b) => b.s - a.s);
+  // asiento: primero la palabra (familias), luego el catálogo con el mismo buscador de Asientos
+  let op = null;
+  const f = famDe(qc);
+  if (f && (PALABRAS_COMPRA.test(qc) || pideAsiento)) op = opDeFamilia(f, qn);
+  if (!op) { const R = puntuar(qn).L; if (R[0] && R[0].s >= 4 && (!R[1] || R[0].s > R[1].s || /\bventa\b/.test(qc) === /venta/i.test(R[0].o.t))) op = R[0].o; }
+  if (op && pideAsiento) out.push(tablaOp(op, qn));
+  if (fq[0] && fq[0].s >= (op && pideAsiento ? 6 : 3)) out.push(fq[0].f.r);
+  if (op && !pideAsiento && !out.length) out.push(tablaOp(op, qn));
+  if (cods.length && out.length < 2) cods.slice(0, 3).forEach(c => {
     const d = DIN[c.slice(0, 2)], nat = NAT[c[0]] || ['', ''];
-    out.push(`**${c} ${PM[c]}**${c.length > 2 ? ` (${NIV[Math.min(c.length, 5)].toLowerCase()} de la ${c.slice(0, 2)} ${PM[c.slice(0, 2)] ? PM[c.slice(0, 2)].charAt(0) + PM[c.slice(0, 2)].slice(1).toLowerCase() : ''})` : ''}
+    out.push(`**${c} ${PM[c]}**${c.length > 2 ? ` (${NIV[Math.min(c.length, 5)].toLowerCase()} de la ${c.slice(0, 2)})` : ''}
 - Es de ${nat[0].toLowerCase()}, naturaleza ${nat[1]}.${d ? `
 - **Para qué sirve:** ${d[0]}
 - **Va al Debe cuando:** ${d[1]}
 - **Va al Haber cuando:** ${d[2]}` : ''}${(() => { const u = usosDe(c).filter(x => x.o).slice(0, 3); return u.length ? `
 - **Se usa, por ejemplo, en:** ${u.map(x => `${x.o.t} (${x.l[0]} al ${x.l[1] === 'D' ? 'Debe' : 'Haber'})`).join('; ')}.` : ''; })()}`);
   });
-  // 3) "cómo registro..." → arma el asiento con el buscador
-  if (!out.length || pideAsiento) {
-    const qq = qn.replace(/\b(como|cual|que|se|registra|registro|registrar|contabilizo|contabiliza|contabilizar|hago|el|la|asiento|de|del|por|un|una)\b/g, ' ').replace(/\s+/g, ' ').trim();
-    const f = famDe(qn);
-    const op = f ? opDeFamilia(f, qn) : (() => { const t = qq.split(' ').filter(x => x.length > 2); let best = null; OPS.forEach(o => { const tt = norm(o.t + ' ' + o.k); const s = t.filter(x => tt.includes(x)).length; if (s && (!best || s > best.s)) best = {o, s}; }); return best && best.s >= Math.min(2, t.length) ? best.o : null; })();
-    if (op) out[pideAsiento ? 'unshift' : 'push'](`**Asiento: ${op.t}**
-| Cuenta | Denominación | Debe | Haber |
-|---|---|---|---|
-${(() => { const L = op.a.filter(a => !a.d && a.t !== 'Pago').flatMap(a => a.l); const pas = L.find(l => l[1] === 'H' && /^(42|424|465|46)/.test(l[0])); if (pas && !/\bcredito\b/.test(qn)) L.push([pas[0], 'D'], [/\b(efectivo|caja)\b/.test(qn) ? '101' : '1041', 'H']); return L.map(([c, s]) => `| ${c} | ${nombreClaro(c)} | ${s === 'D' ? 'X' : ''} | ${s === 'H' ? 'X' : ''} |`).join('\n'); })()}
-Las dos últimas líneas son el pago. Ábrelo en **Asientos** para ver los montos, el destino y cada variante.`);
-  }
   return out.length ? out.join('\n\n') : '';
 }
 
@@ -2498,6 +2517,8 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const LS = {get(k, d) { try { const v = localStorage.getItem('pcge-' + k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { try { localStorage.setItem('pcge-' + k, JSON.stringify(v)); } catch {} }};
 const nf = n => (+n).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const CANON = [[/\b(el )?(cliente|clientes) (me |nos )?(pag\w*|deposit\w*|cancel\w*)\b/g, 'cobro cliente'], [/\bme (pag\w*|deposit\w*)\b/g, 'cobro'], [/\b(me |nos )?(prestan|prestaron|prestara|prestaran|presta)\b/g, 'prestamo'], [/\bplata\b/g, 'dinero'], [/\b(vend\w*|venta\w*)\b/g, 'venta'], [/\b(compr\w*)\b/g, 'compra'], [/\b(pag(o|ue|uo|amos|ar|aron|ara|ado|ada|an|as|a)|cancel\w*)\b/g, 'pago'], [/\b(cobr\w*)\b/g, 'cobro'], [/\b(alquil\w*|arriend\w*)\b/g, 'alquiler'], [/\b(prestamo\w*|prest(e|o|amos|aron)|me prestaron|presto)\b/g, 'prestamo'], [/\b(deposit\w*)\b/g, 'deposito'], [/\b(devol\w*|devuel\w*)\b/g, 'devolucion'], [/\b(servicios|servicio)\b/g, 'servicio'], [/\b(mercaderias|mercancias?|productos?)\b/g, 'mercaderia'], [/\b(honorario|honorarios)\b/g, 'honorarios'], [/\b(trabajadores|empleados?|obreros?)\b/g, 'trabajador'], [/\b(sueldos?|salarios?|remuneraciones?)\b/g, 'sueldo'], [/\b(aportes?|aporto|aportaron|aportamos)\b/g, 'aporte'], [/\b(clientes)\b/g, 'cliente'], [/\b(proveedores)\b/g, 'proveedor'], [/\b(facturas|facture|facturo|facturamos)\b/g, 'factura'], [/\b(boletas)\b/g, 'boleta'], [/\b(prestacion de servicio|prestar servicio|presto servicio|brindo servicio|brindamos servicio)\b/g, 'venta servicio'], [/\bme dedico a\b/g, '']];
+const canon = s => CANON.reduce((t, [re, r]) => t.replace(re, r), s).replace(/\s+/g, ' ').trim();
 const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
 const parseNum = s => { const v = parseFloat(String(s || '').replace(/,/g, '').replace(/[^\d.]/g, '')); return isFinite(v) ? v : 0; };
 function toast(t) { const d = document.createElement('div'); d.className = 'toast'; d.setAttribute('role', 'status'); d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2400); }
@@ -2565,6 +2586,16 @@ function opDeFamilia(f, qn) {
   const verbo = f.c.startsWith('63') || f.c === '651' || f.c === '653' || f.c === '624' ? 'Pago de' : 'Compra de';
   return {id: 'fam:' + f.n, cat: f.tipo === 'activo' ? 'Activo fijo' : 'Compras', fam: f, t: titulo0(verbo, f), sub: `Se registra como: ${f.n} (${f.c} ${nombre(f.c)})`, calc: f.sinIgv || boleta ? 's' : 'g', a};
 }
+function puntuar(qn, cat) {
+  const qc = canon(qn), toks = qc.split(' ').filter(t => t.length > 2 && !STOP.has(t));
+  return {toks, L: OPS.filter(o => !cat || o.cat === cat).map(o => {
+    if (!toks.length) return {o, s: 1};
+    const tt = canon(norm(o.t)), kk = canon(norm(o.k)); let s = 0;
+    toks.forEach(t => { if ((' ' + tt + ' ').includes(' ' + t + ' ')) s += 3; else if (tt.includes(t)) s += 2; else if ((' ' + kk + ' ').includes(' ' + t + ' ')) s += 2; else if (t.length > 4 && (tt + ' ' + kk).includes(t.slice(0, -1))) s += 1; });
+    if (/(retencion|detraccion|percepcion|agente|boleta|anticipo|descuento)/.test(tt) && !toks.some(t => tt.includes(t) && /(retencion|detraccion|percepcion|agente|boleta|anticipo|descuento)/.test(t))) s -= 2;
+    return {o, s};
+  }).filter(x => x.s > 0).sort((a, b) => b.s - a.s)};
+}
 function buscar() {
   const qn = norm($('q').value), toks = qn.split(' ').filter(t => t.length > 2 && !STOP.has(t));
   if (!toks.length && !filtroCat) {   // sin búsqueda: pantalla limpia
@@ -2572,12 +2603,7 @@ function buscar() {
     $('res').innerHTML = `<div class="vacio"><b>Escribe la operación que quieres registrar</b><span>Por ejemplo: «pago de la camioneta», «recibo por honorarios», «venta de servicio con detracción». También puedes dictarla con el micrófono o elegir un tipo de operación.</span></div>`;
     $('det').innerHTML = ''; $('m2w').hidden = true; return;
   }
-  let L = OPS.filter(o => !filtroCat || o.cat === filtroCat).map(o => {
-    if (!toks.length) return {o, s: 1};
-    const tt = norm(o.t), kk = norm(o.k); let s = 0;
-    toks.forEach(t => { if (tt.includes(t)) s += 3; else if (kk.includes(t)) s += 2; else if (t.length > 4 && (tt + ' ' + kk).includes(t.slice(0, -1))) s += 1; });
-    return {o, s};
-  }).filter(x => x.s > 0).sort((a, b) => b.s - a.s);
+  let L = puntuar(qn, filtroCat).L;
   const top = L.length ? L[0].s : 0;
   const exacta = toks.length && top >= toks.length * 3;   // todas las palabras están en el título de una operación de la lista
   const f = toks.length && !exacta ? famDe(qn) : null, famOp = f && (PALABRAS_COMPRA.test(qn) || toks.length <= 3) ? opDeFamilia(f, qn) : null;
@@ -2819,16 +2845,18 @@ function md(t) {
   return out;
 }
 function pintarChat() { $('chat').innerHTML = turnos.map(t => `<div class="msg ${t.role === 'user' ? 'u' : 'a'}">${t.role === 'user' ? esc(t.content).replace(/\n/g, '<br>') : md(t.content)}</div>`).join(''); }
-const SIN_RESP = 'No tengo esa respuesta guardada en la app. Prueba con otras palabras (por ejemplo, el nombre del tributo o el número de la cuenta) o pregúntale a Claude.';
+const SIN_RESP = 'Esa pregunta no la puedo resolver sin internet. Toca **Preguntar a Claude**: tu pregunta se copia sola y Claude te la responde completa.';
 async function enviar() {
   const txt = $('cin').value.trim(); if (!txt || ctl) return;
   turnos.push({role: 'user', content: txt}); $('cin').value = ''; $('cnote').textContent = ''; micEstado('cin', '');
   const s = await getSample();
   if (!s) {   // app instalada: responde el asistente de la app, al instante
-    const r = respuestaLocal(txt);
+    const prev = [...turnos].reverse().filter(t => t.role === 'user').slice(1, 2).map(t => t.content)[0] || '';
+    const r = respuestaLocal(txt, prev);
     turnos.push({role: 'assistant', content: (r || SIN_RESP), local: 1}); pintarChat();
     $('chat').lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
-    $('cnote').innerHTML = (r ? '' : '¿Necesitas algo más específico? ') + '<a href="' + LINK_CLAUDE + '" target="_blank" rel="noopener">Preguntar a Claude</a> (copia tu pregunta y pégala allá).';
+    $('cnote').innerHTML = (r ? '¿Quieres más detalle? ' : '') + '<button class="btn2" id="aClaude" style="padding:6px 10px">Preguntar a Claude</button> <span>(tu pregunta se copia sola: pégala allá)</span>';
+    $('aClaude').onclick = async () => { try { await navigator.clipboard.writeText(txt); } catch {} window.open(LINK_CLAUDE, '_blank', 'noopener'); };
     return;
   }
   turnos.push({role: 'assistant', content: 'Pensando…'}); pintarChat();
