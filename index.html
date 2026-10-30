@@ -114,10 +114,12 @@ tr.tot td{font-weight:800}
 .msg.u{justify-self:end;background:var(--brand);color:var(--on)}
 .msg.a{justify-self:start;background:var(--paper);border:1px solid var(--line)}
 .msg.a p{margin:.3em 0}.msg.a ul,.msg.a ol{margin:.3em 0;padding-left:1.2em}
-.msg.a table{margin:.4em 0;font-size:.8rem}.msg.a td,.msg.a th{border:1px solid var(--line)}
+.msg.a table{margin:.4em 0;font-size:.8rem}.msg.a td,.msg.a th{border:1px solid var(--line);overflow-wrap:normal;word-break:normal;padding:5px 6px}.msg.a td:first-child{white-space:nowrap;font-family:var(--m);font-weight:700;color:var(--brand)}.msg.a th{white-space:nowrap}.msg.a .tw{max-width:100%}
+.msg.a{max-width:100%}
 .msg.a code{font-family:var(--m);font-size:.85em;color:var(--brand)}
 .composer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
 .composer textarea{resize:vertical;min-height:52px;max-height:220px}
+@media (max-width:600px){.composer{grid-template-columns:minmax(0,1fr)}.composer>div:last-child{grid-template-columns:1fr 1fr}}
 /* Ajustes */
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px}
 .sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:8px}
@@ -208,7 +210,7 @@ details[open]>summary::after{transform:rotate(180deg)}
 
     <!-- CONSULTAS -->
     <section data-sec="consultas" hidden>
-      <p class="note" style="margin-top:0">Pregunta lo que quieras de contabilidad peruana (PCGE 2019, SUNAT, IGV, renta, planilla) o pega un asiento para que lo revise y te diga qué corregir.</p>
+      <p class="note" style="margin-top:0">Pregunta lo que quieras de contabilidad peruana (también cuentas como «¿para qué es la 40111?» o «¿cómo registro el pago de luz?») (PCGE 2019, SUNAT, IGV, renta, planilla) o pega un asiento para que lo revise y te diga qué corregir.</p>
       <details class="card sugd"><summary>Preguntas de ejemplo</summary><div class="list" id="sug" style="margin-top:8px"></div></details>
       <div class="chat" id="chat"></div>
       <div class="composer">
@@ -2335,6 +2337,147 @@ const DIN = {
   '97': ['Gastos financieros (destino).', 'Destino de intereses y gastos financieros (contra 79).', 'Al cierre (contra 79).'],
 };
 
+/* ===== Asistente sin internet: respuestas a dudas frecuentes (Perú, PCGE 2019, SUNAT) ===== */
+const FAQ = [
+  {k: 'retencion cuarta 4ta honorarios recibo por honorarios 1500 8% rh retener', r: `**Retención de 4ta categoría (recibos por honorarios)**
+- Si el recibo **pasa de S/ 1,500**, la empresa retiene el **8%** y lo paga a SUNAT en el PDT 621 (cuenta **40172**).
+- Si el recibo es de **S/ 1,500 o menos**, **no se retiene**: pagas el total.
+- Tampoco se retiene si el profesional tiene **suspensión de 4ta categoría** (formulario 1609), aunque el recibo pase de S/ 1,500.
+Ejemplo: recibo de S/ 2,000 → retienes 160 (40172) y pagas 1,840 (424).`},
+  {k: 'detraccion detracciones spot banco de la nacion 12% 4% 10% constancia construccion', r: `**Detracciones (SPOT)**
+- Se aplican cuando el comprobante **pasa de S/ 700** y el bien o servicio está en la lista de SUNAT.
+- Tasas más usadas: **12%** servicios en general (mantenimiento, reparación, asesorías, etc.), **10%** arrendamiento, **4%** contratos de construcción y transporte de carga.
+- El **cliente** deposita la detracción en la cuenta del **Banco de la Nación** del proveedor y le paga el resto.
+- El proveedor registra el depósito en la **1072** y solo puede usarlo para pagar tributos.
+Ejemplo (servicio de S/ 2,360 al 12%): detracción 283; el cliente te paga 2,077.`},
+  {k: 'retencion igv 3% agente de retencion comprobante de retencion 700', r: `**Retención del IGV (3%)**
+- La hacen los **agentes de retención** designados por SUNAT al pagar a sus proveedores.
+- Es el **3% del total** del comprobante, cuando la operación **pasa de S/ 700**.
+- Si a ti te retienen: registras la retención en la **40114** al Debe y la descuentas en el PDT 621 (casilla 179).
+- Si tú eres agente: la retención va a la **40114** al Haber y la declaras en el PDT 626.`},
+  {k: 'percepcion igv 2% agente de percepcion', r: `**Percepción del IGV**
+- La cobra el **proveedor agente de percepción** además del precio.
+- Tasa general en ventas internas: **2%** (hay tasas de 1% y 0.5% en casos especiales, como combustibles).
+- Para ti es un **pago adelantado de IGV**: va a la **40113** al Debe y lo descuentas en el PDT 621 (casilla 171).`},
+  {k: 'igv 18% impuesto general a las ventas credito fiscal debito fiscal', r: `**IGV**
+- Tasa: **18%** (16% de IGV + 2% de Impuesto de Promoción Municipal).
+- **Débito fiscal:** el IGV de tus ventas, va a la **40111** al Haber.
+- **Crédito fiscal:** el IGV de tus compras con factura, va a la **40111** al Debe.
+- IGV a pagar del mes = IGV de ventas − IGV de compras − percepciones − retenciones.
+- Para usar el crédito fiscal necesitas **factura** y anotarla en el Registro de Compras.`},
+  {k: 'boleta factura diferencia credito fiscal boleta de venta', r: `**Boleta o factura**
+- Con **factura**, el IGV es crédito fiscal (40111 al Debe) y el gasto o costo va sin IGV.
+- Con **boleta**, **no hay crédito fiscal**: todo el importe (con IGV) va al gasto o costo.
+- Por eso en las compras de la empresa conviene pedir siempre factura con tu RUC.`},
+  {k: 'essalud 9% onp 13% afp aportes planilla descuentos trabajador', r: `**Aportes de planilla**
+- **EsSalud 9%:** lo paga la **empresa** (gasto 6271; por pagar 4031). Se calcula como mínimo sobre la remuneración mínima vital.
+- **ONP 13%:** se **descuenta al trabajador** (por pagar 4032).
+- **AFP:** se descuenta al trabajador: 10% de aporte + prima de seguro + comisión, aprox. **11.4%** en total (por pagar 407).
+- El sueldo neto = sueldo − ONP o AFP (va a la 4111).`},
+  {k: 'cts compensacion por tiempo de servicios mayo noviembre deposito', r: `**CTS**
+- Se deposita en **mayo** y **noviembre** en el banco que elija el trabajador.
+- Régimen general: aprox. **medio sueldo por semestre** (sueldo + 1/6 de la gratificación).
+- Pequeña empresa (REMYPE): 15 remuneraciones diarias por año. Microempresa: **no** tiene CTS.
+- Asiento: 6291 al Debe / 4151 al Haber; al depositar, 4151 al Debe / 1041 al Haber.`},
+  {k: 'gratificacion julio diciembre bonificacion extraordinaria 9%', r: `**Gratificaciones**
+- Se pagan en **julio** y **diciembre**.
+- Régimen general: **un sueldo** por cada una, más la **bonificación extraordinaria del 9%** (lo que sería el EsSalud).
+- Pequeña empresa (REMYPE): **medio sueldo**. Microempresa: **no** tiene.
+- Asiento: 6214 al Debe / 4114 al Haber; al pagar, 4114 al Debe / 1041 al Haber.`},
+  {k: 'vacaciones dias descanso vacacional', r: `**Vacaciones**
+- Régimen general: **30 días** por año trabajado.
+- Micro y pequeña empresa (REMYPE): **15 días** por año.
+- Asiento: 6215 al Debe / 4115 al Haber.`},
+  {k: 'mype regimen mype tributario pago a cuenta 1% 1.5% renta mensual impuesto a la renta anual 10% 29.5%', r: `**Régimen MYPE Tributario**
+- **Pago a cuenta mensual de renta:** **1%** de los ingresos netos si no pasas de 300 UIT al año; si pasas, 1.5% o el coeficiente.
+- **Impuesto a la renta anual:** **10%** de la utilidad hasta 15 UIT y **29.5%** por el exceso.
+- El pago a cuenta va en el PDT 621 (casilla 312 en la app Viernes) y se registra en la **40171**.`},
+  {k: 'rer regimen especial 1.5% rus nuevo rus regimenes tributarios general', r: `**Regímenes tributarios**
+- **Nuevo RUS:** cuota fija mensual; solo boletas; para negocios pequeños.
+- **RER:** paga **1.5%** mensual de los ingresos netos.
+- **Régimen MYPE Tributario:** pagos a cuenta de 1% (hasta 300 UIT) e impuesto anual de 10% hasta 15 UIT y 29.5% por el exceso.
+- **Régimen General:** pagos a cuenta de 1.5% o coeficiente e impuesto anual de 29.5%.`},
+  {k: 'destino clase 9 94 95 97 79 asiento de destino para que sirve', r: `**Asientos de destino (clase 9)**
+- Los gastos por naturaleza (62 a 68) se "destinan" a la función donde se usaron:
+  - **94** gastos administrativos
+  - **95** gastos de ventas
+  - **97** gastos financieros
+- La contrapartida es la **791** (cargas imputables a cuentas de costos y gastos).
+- Las compras (60) se destinan al almacén: 20, 24, 25, 26 contra la 61 (variación de existencias).`},
+  {k: '4212 4654 diferencia proveedor activo fijo 465 pasivos por compra de activo', r: `**4212 o 4654**
+- **4212:** deudas con proveedores por compras de **mercadería, suministros y servicios** del giro.
+- **4654 (465):** deudas por la compra de **activo fijo** (vehículos, computadoras, muebles, maquinaria).
+- Ejemplo: compras una camioneta al crédito → 3341 al Debe / 4654 al Haber, no a la 42.`},
+  {k: '656 6032 suministros limpieza utiles de oficina diferencia', r: `**656 o 6032 (suministros)**
+- **656 Suministros:** cuando los consumes al toque y no los guardas en almacén (útiles de limpieza, útiles de oficina).
+- **6032 Suministros (compras):** cuando los guardas en almacén; luego van con destino a la **252** contra la 6132.
+- Si los vendes, no son suministros: son **mercadería** (6011).`},
+  {k: 'depreciacion tasas porcentaje anual vehiculos computadoras edificios maquinaria muebles', r: `**Tasas de depreciación (SUNAT, máximas anuales)**
+- Edificios y construcciones: **5%**.
+- Vehículos de transporte terrestre: **20%**.
+- Maquinaria y equipo para construcción, minería y petróleo: **20%**.
+- Equipos de procesamiento de datos (computadoras): **25%**.
+- Maquinaria y equipo adquiridos desde 1991: **10%**.
+- Otros bienes (muebles, enseres): **10%**.
+Asiento mensual: 6841 al Debe / 3952x al Haber (y destino 94 / 791).`},
+  {k: 'activo fijo o gasto cuarto de uit 1/4 uit valor pequeño', r: `**¿Activo fijo o gasto?**
+- Los bienes cuyo costo **no pasa de 1/4 de UIT** pueden registrarse directamente como **gasto** del año (por ejemplo, en 656 o 6343).
+- Si lo pasan y duran más de un año, van a la clase **33** y se deprecian.`},
+  {k: 'nota de credito devolucion anulacion descuento', r: `**Nota de crédito**
+- **Recibida** (de tu proveedor): baja tu deuda → 4212 al Debe; 40111 y la compra (6011) al Haber.
+- **Emitida** (a tu cliente): baja tu venta → 7092 y 40111 al Debe; 1212 al Haber.
+- Si hay devolución de mercadería, también se ajusta el almacén (2011) y el costo (6912).`},
+  {k: 'caja chica fondo fijo reposicion', r: `**Caja chica (fondo fijo)**
+- **Apertura:** 102 al Debe / 1041 al Haber.
+- **Gastos:** se registran con sus comprobantes en las cuentas de gasto.
+- **Reposición:** los gastos al Debe / 1041 al Haber, por el monto gastado, para que el fondo vuelva a su monto original.`},
+  {k: 'aporte capital constitucion socios acciones participaciones 5011 5012 1421', r: `**Aporte de capital**
+- **Suscripción:** 1421 al Debe / 5011 al Haber (o **5012** si es SRL o EIRL: participaciones).
+- **Pago en efectivo:** 1041 al Debe / 1421 al Haber.
+- **Aporte en bienes:** el activo (por ejemplo 3341) al Debe / 1421 al Haber.`},
+  {k: 'naturaleza deudora acreedora saldo cuentas activo pasivo gastos ingresos', r: `**Naturaleza de las cuentas**
+- **Deudora** (aumentan por el Debe): activos (clases 1 a 3), gastos (6) y destino (9).
+- **Acreedora** (aumentan por el Haber): pasivos (4), patrimonio (5) e ingresos (7).
+- Excepciones: las cuentas de valuación (19, 29, 39) son acreedoras aunque estén en el activo.`},
+  {k: 'uit unidad impositiva tributaria valor', r: `**UIT**
+- Es el valor de referencia que SUNAT usa para límites y multas; cambia cada año.
+- Revisa el valor vigente en la web de SUNAT antes de calcular límites (por ejemplo, 1/4 de UIT o 300 UIT).`},
+  {k: 'registro de compras ventas plazo anotar 12 periodos sire', r: `**Registros de Compras y Ventas**
+- Las facturas de compra deben anotarse en el **Registro de Compras** para usar el crédito fiscal; hay un plazo máximo de **12 periodos** desde su emisión.
+- Hoy se llevan en el **SIRE** de SUNAT, que te propone los registros con los comprobantes electrónicos.`},
+];
+function respuestaLocal(q) {
+  const qn = norm(q), out = [];
+  // 1) pregunta por una cuenta: "para qué es la 40111", "diferencia entre 4212 y 4654"
+  const cods = [...new Set((qn.match(/\b\d{2,5}\b/g) || []).filter(c => PM[c]))];
+  // 2) preguntas frecuentes por palabras
+  const toks = qn.split(' ').filter(t => t.length > 2 && !STOP.has(t) && !/^(como|cual|cuando|donde|porque|para|que|cuanto|registro|registrar|contabilizo|contabilizar|asiento|cuenta|cuentas|usar|uso|sirve|diferencia|hay|entre)$/.test(t));
+  const fq = FAQ.map(f => { const kk = ' ' + norm(f.k) + ' '; let s = 0; toks.forEach(t => { if (kk.includes(' ' + t + ' ')) s += 3; else if (t.length > 4 && kk.includes(t.slice(0, -1))) s += 1; }); cods.forEach(c => { if (kk.includes(' ' + c + ' ')) s += 4; }); return {f, s}; }).sort((a, b) => b.s - a.s);
+  const pideAsiento = /\b(como (registro|registrar|contabilizo|contabilizar|se registra|se contabiliza|hago el asiento)|asiento de|asiento del|asiento por)\b/.test(qn);
+  if (fq[0] && fq[0].s >= (pideAsiento ? 6 : 3)) out.push(fq[0].f.r);
+  if (!out.length || cods.length) cods.slice(0, 3).forEach(c => {
+    const d = DIN[c.slice(0, 2)], nat = NAT[c[0]] || ['', ''];
+    out.push(`**${c} ${PM[c]}**${c.length > 2 ? ` (${NIV[Math.min(c.length, 5)].toLowerCase()} de la ${c.slice(0, 2)} ${PM[c.slice(0, 2)] ? PM[c.slice(0, 2)].charAt(0) + PM[c.slice(0, 2)].slice(1).toLowerCase() : ''})` : ''}
+- Es de ${nat[0].toLowerCase()}, naturaleza ${nat[1]}.${d ? `
+- **Para qué sirve:** ${d[0]}
+- **Va al Debe cuando:** ${d[1]}
+- **Va al Haber cuando:** ${d[2]}` : ''}${(() => { const u = usosDe(c).filter(x => x.o).slice(0, 3); return u.length ? `
+- **Se usa, por ejemplo, en:** ${u.map(x => `${x.o.t} (${x.l[0]} al ${x.l[1] === 'D' ? 'Debe' : 'Haber'})`).join('; ')}.` : ''; })()}`);
+  });
+  // 3) "cómo registro..." → arma el asiento con el buscador
+  if (!out.length || pideAsiento) {
+    const qq = qn.replace(/\b(como|cual|que|se|registra|registro|registrar|contabilizo|contabiliza|contabilizar|hago|el|la|asiento|de|del|por|un|una)\b/g, ' ').replace(/\s+/g, ' ').trim();
+    const f = famDe(qn);
+    const op = f ? opDeFamilia(f, qn) : (() => { const t = qq.split(' ').filter(x => x.length > 2); let best = null; OPS.forEach(o => { const tt = norm(o.t + ' ' + o.k); const s = t.filter(x => tt.includes(x)).length; if (s && (!best || s > best.s)) best = {o, s}; }); return best && best.s >= Math.min(2, t.length) ? best.o : null; })();
+    if (op) out[pideAsiento ? 'unshift' : 'push'](`**Asiento: ${op.t}**
+| Cuenta | Denominación | Debe | Haber |
+|---|---|---|---|
+${(() => { const L = op.a.filter(a => !a.d && a.t !== 'Pago').flatMap(a => a.l); const pas = L.find(l => l[1] === 'H' && /^(42|424|465|46)/.test(l[0])); if (pas && !/\bcredito\b/.test(qn)) L.push([pas[0], 'D'], [/\b(efectivo|caja)\b/.test(qn) ? '101' : '1041', 'H']); return L.map(([c, s]) => `| ${c} | ${nombreClaro(c)} | ${s === 'D' ? 'X' : ''} | ${s === 'H' ? 'X' : ''} |`).join('\n'); })()}
+Las dos últimas líneas son el pago. Ábrelo en **Asientos** para ver los montos, el destino y cada variante.`);
+  }
+  return out.length ? out.join('\n\n') : '';
+}
+
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const LS = {get(k, d) { try { const v = localStorage.getItem('pcge-' + k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { try { localStorage.setItem('pcge-' + k, JSON.stringify(v)); } catch {} }};
@@ -2637,6 +2780,7 @@ document.addEventListener('click', e => {
 });
 
 /* ===== Consultas con Claude ===== */
+const LINK_CLAUDE = 'https://claude.ai/artifact/GJzvBGznCexAbYrre9wYuE';
 const REGLAS = `Eres un contador público colegiado peruano y profesor. Respondes en español de Perú, claro y directo, con números concretos. Usas el Plan Contable General Empresarial (PCGE 2019, MEF), normas de SUNAT (IGV 18%, renta de 3ra, 4ta y 5ta categoría, detracciones, retenciones, percepciones, PDT 621, PLAME) y NIIF cuando aplique.
 Si te pasan un asiento, revísalo cuenta por cuenta: di si está bien o mal, por qué, y escribe el asiento corregido en una tabla con columnas Cuenta | Denominación | Debe | Haber.
 Si una norma o tasa puede haber cambiado, dilo. Sé breve: máximo unas 250 palabras salvo que pidan más detalle.`;
@@ -2646,7 +2790,7 @@ $('sug').innerHTML = SUG.map(s => `<button class="it" data-sug="${esc(s)}">${esc
 $('sug').addEventListener('click', e => { const b = e.target.closest('[data-sug]'); if (b) { $('cin').value = b.dataset.sug; enviar(); } });
 function md(t) {
   const lines = esc(t).split('\n'); let out = '', i = 0;
-  const inl = s => s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  const inl = s => s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/(^|\s)_(.+?)_(?=\s|$)/g, '$1<i>$2</i>');
   while (i < lines.length) {
     const l = lines[i];
     if (/^\s*\|.*\|\s*$/.test(l)) { const rows = []; while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) { if (!/^\s*\|[\s:|-]+\|\s*$/.test(lines[i])) rows.push(lines[i].trim().slice(1, -1).split('|').map(c => inl(c.trim()))); i++; } out += `<div class="tw"><table>${rows.map((r, k) => `<tr>${r.map(c => k ? `<td>${c}</td>` : `<th>${c}</th>`).join('')}</tr>`).join('')}</table></div>`; continue; }
@@ -2658,20 +2802,29 @@ function md(t) {
   return out;
 }
 function pintarChat() { $('chat').innerHTML = turnos.map(t => `<div class="msg ${t.role === 'user' ? 'u' : 'a'}">${t.role === 'user' ? esc(t.content).replace(/\n/g, '<br>') : md(t.content)}</div>`).join(''); }
+const SIN_RESP = 'No tengo esa respuesta guardada en la app. Prueba con otras palabras (por ejemplo, el nombre del tributo o el número de la cuenta) o pregúntale a Claude.';
 async function enviar() {
   const txt = $('cin').value.trim(); if (!txt || ctl) return;
+  turnos.push({role: 'user', content: txt}); $('cin').value = ''; $('cnote').textContent = ''; micEstado('cin', '');
   const s = await getSample();
-  if (!s) { $('cnote').innerHTML = 'Las consultas con Claude funcionan en la versión de PCGE dentro de Claude: <a href="https://claude.ai/artifact/GJzvBGznCexAbYrre9wYuE" target="_blank" rel="noopener">abrir PCGE en Claude</a>.'; return; }
-  turnos.push({role: 'user', content: txt}); $('cin').value = ''; $('cnote').textContent = '';
+  if (!s) {   // app instalada: responde el asistente de la app, al instante
+    const r = respuestaLocal(txt);
+    turnos.push({role: 'assistant', content: (r || SIN_RESP), local: 1}); pintarChat();
+    $('chat').lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
+    $('cnote').innerHTML = (r ? '' : '¿Necesitas algo más específico? ') + '<a href="' + LINK_CLAUDE + '" target="_blank" rel="noopener">Preguntar a Claude</a> (copia tu pregunta y pégala allá).';
+    return;
+  }
   turnos.push({role: 'assistant', content: 'Pensando…'}); pintarChat();
   const burbuja = $('chat').lastElementChild; burbuja.scrollIntoView({behavior: 'smooth', block: 'end'});
   ctl = new AbortController(); $('cstop').hidden = false; $('csend').disabled = true;
-  const hist = turnos.slice(0, -1).slice(-10);
+  const hist = turnos.slice(0, -1).filter(t => !t.local).slice(-10);
   try {
     const {text} = await s([{role: 'user', content: REGLAS}, ...hist], {cache: false, signal: ctl.signal, onText: ({text}) => { burbuja.innerHTML = md(text); }});
     turnos[turnos.length - 1].content = text;
   } catch (e) {
-    const parcial = e && e.text; turnos[turnos.length - 1].content = parcial || (e && e.code === 'cancelled' ? 'Detenido.' : (MSG_ERR[e && e.code] || 'Hubo un problema de conexión. Vuelve a preguntar.'));
+    const parcial = e && e.text, local = respuestaLocal(txt);
+    turnos[turnos.length - 1].content = parcial || (e && e.code === 'cancelled' ? 'Detenido.' : local ? local + '\n\n_(Respondí con la información guardada en la app porque Claude no estuvo disponible.)_' : (MSG_ERR[e && e.code] || 'Hubo un problema de conexión. Vuelve a preguntar.'));
+    if (!parcial && local) turnos[turnos.length - 1].local = 1;
   } finally { ctl = null; $('cstop').hidden = true; $('csend').disabled = false; pintarChat(); }
 }
 $('csend').onclick = enviar; $('cstop').onclick = () => ctl && ctl.abort();
