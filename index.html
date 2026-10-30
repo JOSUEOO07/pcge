@@ -2203,15 +2203,26 @@ const OPS = [
     {t: 'Entrega del bien', l: [['3341', 'D', 'tot', 'El bien entra al activo (ej. vehículo).'], ['1421', 'H', 'tot', 'Se cumple el aporte.']]}]},
   {id: 'ca-div', cat: 'Capital', t: 'Distribución de dividendos', k: 'dividendos utilidades distribucion socios reparto', calc: 's', a: [
     {t: 'Acuerdo', l: [['5911', 'D', 'tot', 'Se usan utilidades acumuladas.'], ['4412', 'H', 'tot', 'Dividendos por pagar a los socios.']]}, PAGO('4412', 'tot')]},
-  {id: 'ca-res', cat: 'Capital', t: 'Reserva legal', k: 'reserva legal 10% utilidad', calc: 's', a: [
-    {t: 'Reserva', l: [['5911', 'D', 'tot', 'Sale de utilidades acumuladas.'], ['582', 'H', 'tot', 'Reserva legal (10% de la utilidad hasta el 20% del capital).']]}]},
+  {id: 'ca-res', cat: 'Capital', t: 'Reserva legal', k: 'reserva legal 10% utilidad ley general de sociedades', calc: 's', a: [
+    {t: 'Conformación de la reserva', l: [['591', 'D', 'tot', 'Sale de utilidades no distribuidas.'], ['582', 'H', 'tot', 'Reserva legal: 10% de la utilidad del año hasta llegar al 20% del capital (Ley General de Sociedades).']]}]},
+  {id: 'ca-aum', cat: 'Capital', t: 'Aumento de capital con aportes en dinero (acuerdo, depósito e inscripción en SUNARP)', k: 'aumento de capital nuevos aportes dinerarios aporte accionistas incremento capital deposito sunarp libro de actas capitalizaciones en tramite 522', calc: 's', a: [
+    {t: '1. Acuerdo de aumento (fecha del libro de actas)', l: [['142', 'D', 'tot', 'Los accionistas quedan obligados a aportar el aumento acordado.'], ['522', 'H', 'tot', 'Capitalizaciones en trámite: el aumento aún no está inscrito en SUNARP.']]},
+    {t: '2. Depósito del aporte', l: [['104', 'D', 'tot', 'Entra el dinero a las cuentas corrientes de la empresa.'], ['142', 'H', 'tot', 'Los accionistas cumplen con su aporte.']]},
+    {t: '3. Formalización (fecha de inscripción en SUNARP)', l: [['522', 'D', 'tot', 'Se cancela la capitalización en trámite.'], ['501', 'H', 'tot', 'Recién con la inscripción en Registros Públicos el aumento pasa al capital social.']]}]},
+  {id: 'ca-deu', cat: 'Capital', t: 'Capitalización de deudas con accionistas (préstamos)', k: 'capitalizacion de deudas prestamos accionista socio pago de facturas con dinero propio tarjeta de credito capitalizar deuda 44 522', calc: 's', a: [
+    {t: '1. Acuerdo de capitalización (libro de actas)', l: [['4411', 'D', 'tot', 'La empresa ya no le devolverá el préstamo al accionista: la deuda se convierte en aporte.'], ['522', 'H', 'tot', 'Capitalizaciones en trámite hasta que se inscriba en SUNARP.']]},
+    {t: '2. Formalización (inscripción en SUNARP)', l: [['522', 'D', 'tot', 'Se cancela la capitalización en trámite.'], ['501', 'H', 'tot', 'El aumento pasa al capital social.']]}]},
+  {id: 'ca-red', cat: 'Capital', t: 'Reducción de capital por retiro de un accionista (pendiente de formalizar)', k: 'reduccion de capital retiro de accionista socio devolucion de aporte 523 reducciones pendientes de formalizacion sunarp', calc: 's', a: [
+    {t: '1. Acuerdo de reducción', l: [['523', 'D', 'tot', 'Reducción de capital pendiente de formalización (aún no inscrita en SUNARP).'], ['441', 'H', 'tot', 'La empresa le debe al accionista la devolución de su aporte.']]},
+    {t: '2. Devolución del aporte', l: [['441', 'D', 'tot', 'Se cancela la deuda con el accionista.'], ['104', 'H', 'tot', 'Sale el dinero de las cuentas corrientes.']]},
+    {t: '3. Formalización (inscripción en SUNARP)', l: [['501', 'D', 'tot', 'Recién con la inscripción baja el capital social.'], ['523', 'H', 'tot', 'Se cancela la reducción pendiente de formalización.']]}]},
   // ---------- CIERRE ----------
   {id: 'ci-apert', cat: 'Cierre', t: 'Asiento de apertura', k: 'asiento de apertura inicio de ejercicio inventario inicial balance inicial', calc: 'na', a: [
     {t: 'Apertura (montos según tu inventario)', l: [['101', 'D', 'na', 'Efectivo en caja al inicio.'], ['1041', 'D', 'na', 'Saldo en bancos.'], ['1212', 'D', 'na', 'Clientes por cobrar.'], ['2011', 'D', 'na', 'Mercaderías en el almacén.'], ['33611', 'D', 'na', 'Activo fijo a su costo.'], ['39527', 'H', 'na', 'Depreciación acumulada.'], ['4212', 'H', 'na', 'Proveedores por pagar.'], ['4511', 'H', 'na', 'Préstamos.'], ['5011', 'H', 'na', 'Capital.'], ['5911', 'H', 'na', 'Utilidades acumuladas.']]}]},
   {id: 'ci-cost', cat: 'Cierre', t: 'Cierre de cuentas de gastos (clase 9 contra 79)', k: 'cierre 79 clase 9 cancelacion destino', calc: 's', a: [
     {t: 'Cancelación', l: [['791', 'D', 'tot', 'Se cierra la cuenta 79.'], ['94', 'H', 'tot', 'Se cierran los gastos de destino (94, 95, 97).']]}]},
-  {id: 'ci-util', cat: 'Cierre', t: 'Determinación de la utilidad del ejercicio', k: 'utilidad del ejercicio cierre 89 resultado', calc: 's', a: [
-    {t: 'Resultado', l: [['891', 'D', 'tot', 'Utilidad del ejercicio (antes de pasarla al patrimonio).'], ['5911', 'H', 'tot', 'La utilidad pasa a resultados acumulados.']]}]},
+  {id: 'ci-util', cat: 'Cierre', t: 'Resultado del ejercicio antes de participaciones e impuestos', k: 'utilidad del ejercicio cierre 89 891 resultado antes de participaciones e impuestos determinacion del resultado 591', calc: 's', a: [
+    {t: 'Traslado del resultado', l: [['891', 'D', 'tot', 'Se cierra la utilidad determinada en la cuenta 89.'], ['591', 'H', 'tot', 'La utilidad pasa a utilidades no distribuidas (resultados acumulados).']]}]},
 ];
 
 /* ===== Familias de palabras: "compra de X" o "pago de X" arma el asiento con la cuenta correcta =====
@@ -2435,6 +2446,11 @@ Asiento mensual: 6841 al Debe / 3952x al Haber (y destino 94 / 791).`},
 - **Suscripción:** 1421 al Debe / 5011 al Haber (o **5012** si es SRL o EIRL: participaciones).
 - **Pago en efectivo:** 1041 al Debe / 1421 al Haber.
 - **Aporte en bienes:** el activo (por ejemplo 3341) al Debe / 1421 al Haber.`},
+  {k: 'aumento de capital capitalizacion 522 capitalizaciones en tramite sunarp reduccion 523 formalizacion', r: `**Aumentos y reducciones de capital**
+- **Aumento con aportes en dinero:** acuerdo 142 al Debe / 522 al Haber → depósito 104 / 142 → al inscribirse en SUNARP, 522 / 501.
+- **Capitalización de deudas con accionistas:** acuerdo 4411 / 522 → al inscribirse, 522 / 501.
+- **Reducción por retiro de un accionista:** acuerdo 523 / 441 → devolución 441 / 104 → al inscribirse, 501 / 523.
+- La **50 (capital social)** solo cambia con la **inscripción en Registros Públicos**; mientras tanto se usa la **52** (522 o 523).`},
   {k: 'naturaleza deudora acreedora saldo cuentas activo pasivo gastos ingresos', r: `**Naturaleza de las cuentas**
 - **Deudora** (aumentan por el Debe): activos (clases 1 a 3), gastos (6) y destino (9).
 - **Acreedora** (aumentan por el Haber): pasivos (4), patrimonio (5) e ingresos (7).
@@ -2563,7 +2579,8 @@ function buscar() {
     return {o, s};
   }).filter(x => x.s > 0).sort((a, b) => b.s - a.s);
   const top = L.length ? L[0].s : 0;
-  const f = toks.length ? famDe(qn) : null, famOp = f && (PALABRAS_COMPRA.test(qn) || toks.length <= 3) ? opDeFamilia(f, qn) : null;
+  const exacta = toks.length && top >= toks.length * 3;   // todas las palabras están en el título de una operación de la lista
+  const f = toks.length && !exacta ? famDe(qn) : null, famOp = f && (PALABRAS_COMPRA.test(qn) || toks.length <= 3) ? opDeFamilia(f, qn) : null;
   // solo lo que de verdad coincide: si se reconoció la palabra, apenas las operaciones muy parecidas
   L = L.filter(x => !toks.length || x.s >= (famOp ? Math.max(6, top) : Math.max(3, top * 0.7))).map(x => x.o).slice(0, famOp ? 2 : 8);
   if (famOp && (!filtroCat || famOp.cat === filtroCat)) L.unshift(famOp);
